@@ -356,6 +356,6 @@ server <- function(input, output) {
     return(p_plotly)
   })
 
-  output$pilferage_explanation <- renderText()
+  # output$pilferage_explanation <- renderText()
 
 }
