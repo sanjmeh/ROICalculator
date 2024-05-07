@@ -9,23 +9,38 @@ ui <- shinyUI(fluidPage(
 
   titlePanel("Return Of Investment Calculator"),
 
+
+  h2("Universal Values"),
+  fluidRow(column(width=2,
+                  numericInput("shift_count","Number of shifts",value = 2)
+                  ),
+           column(width=2,
+                  numericInput("hemm_count","Number of HEMM",value=0)
+           ),
+           column(width=2,
+                  numericInput("truck_count","Number of diesel bowsers/site",value = 7,min=0,max=10),
+           ),
+           column(width=2,
+                  numericInput("hemm_daily_consump","HEMM Fuel Consumption/Day",value=0)
+           ),
+           column(width=2,
+                  numericInput("sfs_count","Number of Fuel Stations",value=2),
+           ),
+           column(width=2,
+                  numericInput("fuel_entry_count", "Number of refuels-entries/day:",value = 200),
+                  )
+  ),
+
+
   navbarPage("Menu",
 
              tabPanel("Manpower Calculation",
+                          h1("Enter Work Parameters"),
                       sidebarLayout(
                         sidebarPanel(
-
-                          title="Enter values",
-                          numericInput("hemm_count","Number of HEMM",value=3),
-                          numericInput("shift_count","Number of shifts",value = 2),
-                          numericInput("truck_count","Number of diesel bowsers/site",value = 7,min=0,max=10),
-                          numericInput("sfs_count","Number of Stationary Fuel Stations",value=2),
                           numericInput("logger_count_per_bowser","Number of fuel data recorders/bowser",value=1),
-                          br(),
-                          "Total numbers of fuel dispatch loggers:",
+                          "Total numbers of fuel dispatch loggers: bowser count * logger per bowser",
                           textOutput("logger_count"),
-                          br(),
-                          numericInput("fuel_entry_count", "Enter number of fuellings/day ~ entries/day:",value = 200),
                           br(),
                           "Entries per year: (entries/day * 365)",
                           textOutput("entries_per_year"),
@@ -74,7 +89,7 @@ ui <- shinyUI(fluidPage(
                             )
                           ),
                           fluidRow(
-                            plotOutput("histogram"),
+                            plotlyOutput("histogram"),
                           ),
                           fluidRow(
                             plotOutput("pieChart")
@@ -96,34 +111,34 @@ ui <- shinyUI(fluidPage(
                       )
              ),
 
-             tabPanel("Pilferage",
-                      sidebarLayout(
-                        sidebarPanel(
-                          numericInput("fuel_per_day","Litres of fuel consumed per day",value = 8000),
-                          br(),
-                          "Litres of fuel consumed/year",
-                          textOutput("fuel_per_year"),
-                          br(),
-                          # sliderInput("fuel_loss_margin","Percetage loss of fuel lost to pilferage: ",value=5,min=0,max=10),
-                          numericInput("fuel_write_off_monthly","Litres of fuel written off per month",value=1000),
-                          br(),
-                          "Litres of fuel written off/year",
-                          textOutput("fuel_write_off_yearly"),
-                          br(),
-                          numericInput("fuel_price","Enter the current price of fuel/ litre: ",value=86),
-                          "Assuming the current price of fuel to be 86"
-                        ),
-                        mainPanel(
-                          # Add output for part 2
-                          plotOutput("pilferage_data")
-                        )
-                      )
-             ),
+             # tabPanel("Pilferage",
+             #          sidebarLayout(
+             #            sidebarPanel(
+             #              numericInput("fuel_per_day","Litres of fuel consumed per day",value = 8000),
+             #              br(),
+             #              "Litres of fuel consumed/year",
+             #              textOutput("fuel_per_year"),
+             #              br(),
+             #              # sliderInput("fuel_loss_margin","Percetage loss of fuel lost to pilferage: ",value=5,min=0,max=10),
+             #              numericInput("fuel_write_off_monthly","Litres of fuel written off per month",value=1000),
+             #              br(),
+             #              "Litres of fuel written off/year",
+             #              textOutput("fuel_write_off_yearly"),
+             #              br(),
+             #              numericInput("fuel_price","Enter the current price of fuel/ litre: ",value=86),
+             #              "Assuming the current price of fuel to be 86"
+             #            ),
+             #            mainPanel(
+             #              # Add output for part 2
+             #              plotOutput("pilferage_data")
+             #            )
+             #          )
+             # ),
 
-             tabPanel("Pilferage2",
+             tabPanel("Pilferage",
                       fluidPage(
 
-                        tabPanel("Menu",
+                        tabPanel("Consumption summary",
                                  # Add content for the Menu tab here
                                  fluidRow(
                                    column(width=12,
@@ -132,42 +147,36 @@ ui <- shinyUI(fluidPage(
                                  ),
                                  fluidRow(
                                    column(width=6,
-                                          h4("Average Volume of a diesel bowser:"),
-                                          verbatimTextOutput("bowser_vol")
+                                          h4("Average Fuel Consumption/Year:"),
+                                          verbatimTextOutput("annual_fuel_consump")
                                    ),
-                                   column(width=6,
-                                          h4("Monthly fuel movement by bowser"),
-                                          verbatimTextOutput("bowser_fuel_mov")
-                                          )
+                                   column(width=3,
+                                          h4("Refuellings/HEMM/month"),
+                                          verbatimTextOutput("refuels_per_month")),
+                                   column(width=3,
+                                          h4("Refuellings/HEMM/year"),
+                                          verbatimTextOutput("refuels_per_year"))
                                  ),
                         ),
-                        tabPanel("Tab 2",
+                        tabPanel("Consumption bifercated",
                                  # Add content for the second tab here
                                  fluidRow(column(width = 6,
-                                                 column(width = 4,
+                                                 column(width = 6,
                                                         fluidRow(
-                                                          h3('How much volume of fuel do you think is underreported everyday?'),
-                                                          numericInput("under_report_day", "", value = 100),
-                                                          br()
+                                                          h3('Under Refueling and Over Reporting'),
+                                                          numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 5),
+                                                          numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 100),
                                                         ),
                                                         fluidRow(
-                                                          tableOutput("underreported_assumption")
-                                                        )
-                                                 ),
-                                                 column(width = 4,
-                                                        fluidRow(
-                                                          h3('How much volume of fuel do you think bowser driver takes out everyday?'),
-                                                          numericInput("driver_steal_day", "", value = 100),
-                                                          br()
+                                                          tableOutput("underreported_calculations")
                                                         ),
-                                                        fluidRow(
-                                                          tableOutput("daily_stealing_assumption")
-                                                        )
                                                  ),
-                                                 column(width = 4,
+
+                                                 column(width = 6,
                                                         fluidRow(
-                                                          h3('How much volume of fuel do you think is underreported everyday?'),
-                                                          numericInput("bowser_fuel_sold_monthly", "", value = 1000),
+                                                          h3('HEMM Fuel Tank Theft'),
+                                                          numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=10),
+                                                          numericInput("bowser_fuel_sold_monthly", "How many litres of fuel do you think is stolen each instance?", value = 1000),
                                                           br()
                                                         ),
                                                         fluidRow(
@@ -178,10 +187,9 @@ ui <- shinyUI(fluidPage(
                                           column(width = 6,
                                                  plotlyOutput("pilferage_hist")
                                                  )
-                        ), # Closing tabPanel
-
+                        ),
                         mainPanel(fluidRow(
-                                    textOutput("plot_explanation")
+                                    textOutput("pilferage_explanation")
                                   )
 
                         )
