@@ -31,12 +31,14 @@ server <- function(input, output) {
 
   pilferage_values <- reactive({
     ur_daily_vol <- input$ur_day_count * input$ur_day_vol
+    vol_saved_yearly = (ur_daily_vol * 365) + (input$bowser_fuel_sold_monthly * 12)
 
     data.frame(
       ur_daily_vol = ur_daily_vol,
       under_reporting_yearly =  ur_daily_vol * 365,
       bowser_fuel_sold_yearly = input$bowser_fuel_sold_monthly * 12,
-      annual_consump_vol = values()$annual_consump_vol
+      annual_consump_vol = values()$annual_consump_vol,
+      vol_saved_yearly = vol_saved_yearly
     )
   })
 
@@ -65,8 +67,6 @@ server <- function(input, output) {
     data_entry_emps = round( (values()$hours/5) /values()$working_days,digits = 0)
     cost_of_dataEmps = data_entry_emps * input$data_entry_emp
 
-
-
     intermediate_result <- values()$entries_per_year * input$error_margin
     err_entries <- intermediate_result / 100.0
     err_hours_int = err_entries / 60.0
@@ -91,6 +91,25 @@ server <- function(input, output) {
     )
 
     return (field_data)
+  })
+
+  travelling_data <- reactive({
+    annual_refuels = if(input$movable_refuels_day != 0){
+      input$movable_refuels_day * 365
+    } else{
+      input$movable_refuels_month * 12
+    }
+
+    movable_refuels = (annual_refuels * input$movable_percent_get) / 100
+    movable_time_spent = round(movable_refuels * input$movable_get_time,digits = 0)
+    movable_time_money = movable_time_spent * input$movable_hemm_price
+
+    data.frame(
+      annual_refuels = annual_refuels,
+      movable_refuels = movable_refuels,
+      movable_time_spent = movable_time_spent,
+      movable_time_money = movable_time_money
+    )
   })
 
   # ********************************************
@@ -332,12 +351,10 @@ server <- function(input, output) {
   })
 
   output$pilferage_hist <- renderPlotly({
-    vol_saved_yearly = (pilferage_values()$under_reporting_yearly + pilferage_values()$bowser_fuel_sold_yearly)
-
-    pilferage_percent = (vol_saved_yearly / pilferage_values()$annual_consump_vol) * 100
+    pilferage_percent = (pilferage_values()$vol_saved_yearly / pilferage_values()$annual_consump_vol) * 100
 
     value_names <- c("Under Reporting", "Fuel Sold Illegally", "Total Saved")
-    values <- c(pilferage_values()$under_reporting_yearly, pilferage_values()$bowser_fuel_sold_yearly, vol_saved_yearly)
+    values <- c(pilferage_values()$under_reporting_yearly, pilferage_values()$bowser_fuel_sold_yearly, pilferage_values()$vol_saved_yearly)
 
     # Create a data frame from the values
     data <- data.frame(
@@ -356,6 +373,44 @@ server <- function(input, output) {
     return(p_plotly)
   })
 
-  # output$pilferage_explanation <- renderText()
+  output$pilferage_explanation <- renderText({
+    pilferage_values()$vol_saved_yearly
+  })
 
+  output$pilferage_cost <- renderText({
+    pilferage_values()$vol_saved_yearly * 86
+  })
+
+  # MOVABLE VEHICLE COST CALCULATION
+
+  output$movable_refuel_sumannual <- renderText({
+    travelling_data()$annual_refuels
+  })
+  output$movable_time_spent <- renderText({
+    travelling_data()$movable_time_spent
+  })
+  output$movable_visualisation <- renderPlotly({
+    data <- data.frame(
+      category = c("Movement Statistics"),
+      value1 = c(travelling_data()$annual_refuels),
+      value2 = c(travelling_data()$movable_time_spent),
+      value3 = c(travelling_data()$movable_time_spent * input$movable_hemm_price)
+    )
+
+    colnames(data)[2:4] <- c("Annual Refuel Count", "Overall Time Spent","Cost of Time")
+
+    # Reshape data for ggplot
+    data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent","Cost of Time"), names_to = "variable", values_to = "value")
+
+    # Plot using ggplot
+    gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
+      labs(title = "",
+           x = "Category", y = "Value") +
+      theme_minimal()
+
+    # Convert ggplot to plotly
+    ggplotly(gg)
+  })
 }

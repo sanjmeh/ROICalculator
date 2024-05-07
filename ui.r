@@ -188,14 +188,49 @@ ui <- shinyUI(fluidPage(
                                                  plotlyOutput("pilferage_hist")
                                                  )
                         ),
-                        mainPanel(fluidRow(
-                                    textOutput("pilferage_explanation")
-                                  )
-
+                        mainPanel(fluidRow(h1("Overall Savings"),
+                                           column(width=6,h3("Litres of savings in fuel"),
+                                                  verbatimTextOutput("pilferage_explanation")),
+                                           column(width=6,h3("Accounts for:"),
+                                                  verbatimTextOutput("pilferage_cost"))
+                                           )
                         )
                       )
               )
-      )
+      ),
+
+      tabPanel("Movement Statistics",
+               fluidPage(
+                 fluidRow(
+                   h1("Movable Vehicle Summary"),
+                 ),
+                 fluidRow(
+                   column(width=2,numericInput("movable_refuels_day","Number of refuels/day",value=0)),
+                   column(width=2,numericInput("movable_refuels_month","Number of refuels/month",value=0)),
+                   column(width=2,numericInput("movable_percent_get","% of refuellings from SFS",value=0)),
+                   column(width=2,numericInput("movable_get_time","Time Spent in each trip",value=1)),
+                   column(width=2,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
+                   # column(width=6,
+                   #        fluidRow(numericInput("movable_refuels_day","Number of refuels/day",value=0),
+                   #                 numericInput("movable_refuels_month","Number of refuels/month",value=0)),
+                   #        fluidRow(h3("Number of refuels/annually"),
+                   #                 verbatimTextOutput("movable_refuel_sumannual"))
+                   #        ),
+                   # column(width=6,
+                   #        fluidRow(numericInput("movable_percent_get","Percentage of refuellings/total going to SFS",value=0),
+                   #                 numericInput("movable_get_time","Time Spent in each trip",value=1),
+                   #                 numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)
+                   #                 ),
+                   #        fluidRow(h3("Overall time spent in refeulling"),
+                   #                 verbatimTextOutput("movable_time_spent"))
+                   #        )
+                 ),
+                 fluidRow(
+                   plotlyOutput("movable_visualisation")
+                 )
+               )
+
+               )
   )
              # tabPanel("Tab 4",
              #          sidebarLayout(
