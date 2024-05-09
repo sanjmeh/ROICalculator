@@ -225,8 +225,17 @@ ui <- shinyUI(fluidPage(
                    #                 verbatimTextOutput("movable_time_spent"))
                    #        )
                  ),
-                 fluidRow(
-                   plotlyOutput("movable_visualisation")
+                 fluidRow(column(width=6,
+                                 plotlyOutput("movable_visualisation")),
+                          fluidRow(column(width=3,
+                                          h3("Number of refuels/annually"),
+                                          verbatimTextOutput("movable_refuel_sumannual")),
+                                   column(width=3,
+                                          h3("Total refeulling time"),
+                                          verbatimTextOutput("movable_time_spent")),
+                                   fluidRow(
+                                     h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for heavy machinery"),
+                                     verbatimTextOutput("movale_money_loss_hours"))),
                  )
                )
 

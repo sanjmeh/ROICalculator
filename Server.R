@@ -403,14 +403,30 @@ server <- function(input, output) {
     data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent","Cost of Time"), names_to = "variable", values_to = "value")
 
     # Plot using ggplot
+    # gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
+    #   geom_bar(stat = "identity", position = "dodge") +
+    #   scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
+    #   labs(title = "",
+    #        x = "Category", y = "Value") +
+    #   theme_minimal()
+
     gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
       geom_bar(stat = "identity", position = "dodge") +
       scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
       labs(title = "",
-           x = "Category", y = "Value") +
-      theme_minimal()
+           x = "Movement Statistics", y = "Value") +
+      theme_minimal() +
+      scale_y_continuous(trans = "log10")
+
+    # ggplotly(gg, originalData = TRUE) %>%
+    #   style(hoverinfo = "text",
+    #         text = paste("Variable: ", data_long$Category, "<br>Value: ", 10^data_long$Value))
+
 
     # Convert ggplot to plotly
     ggplotly(gg)
+  })
+  output$movale_money_loss_hours <- renderText({
+    travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
   })
 }
