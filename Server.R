@@ -1,5 +1,4 @@
 library(shiny)
-library(ggplot2)
 library(DT)
 library(ggplot2)
 library(plotly)
@@ -13,28 +12,33 @@ server <- function(input, output) {
     # data frame scope prevents creation and usage in the same scope hence outside creation
     entries_per_year = input$fuel_entry_count * 365
     working_days = 365 - 104 - 20 - 12
-    fuel_per_year = input$fuel_per_day * 365
-    fuel_write_off_yearly = input$fuel_write_off_monthly * 12
+    # annual_consump_vol = input$hemm_count * input$hemm_daily_consump * 365
+    annual_consump_vol = if( input$hemm_count > 0 && input$hemm_daily_consump > 0 )
+      input$hemm_count * input$hemm_daily_consump * 365 else
+        input$truck_count * 65 * 70 * 365 # each bowser fuelling 65 hemm, each hemm daily consumption of 70lts
 
     data.frame(
       entries_per_year = entries_per_year,
       count_of_loggers = input$shift_count * input$truck_count * input$logger_count_per_bowser,
       working_days = working_days,
-      fuel_per_year = fuel_per_year,
-      fuel_write_off_yearly = fuel_write_off_yearly,
 
       hours = (entries_per_year * 3) / 60,
       days = round((entries_per_year * 3) / 60 / 5, digits = 0),
-      count_of_dataEntry = round((entries_per_year * 3) / 60 / 5 / working_days, digits = 0)
+      count_of_dataEntry = round((entries_per_year * 3) / 60 / 5 / working_days, digits = 0),
+      annual_consump_vol = annual_consump_vol
     )
   })
 
   pilferage_values <- reactive({
+    ur_daily_vol <- input$ur_day_count * input$ur_day_vol
+    vol_saved_yearly = (ur_daily_vol * 365) + (input$bowser_fuel_sold_monthly * 12)
+
     data.frame(
-      under_reporting_yearly = input$under_report_day * 365,
-      driver_steal_yearly = input$driver_steal_day * 365,
+      ur_daily_vol = ur_daily_vol,
+      under_reporting_yearly =  ur_daily_vol * 365,
       bowser_fuel_sold_yearly = input$bowser_fuel_sold_monthly * 12,
-      annual_consump_vol = 237250
+      annual_consump_vol = values()$annual_consump_vol,
+      vol_saved_yearly = vol_saved_yearly
     )
   })
 
@@ -63,8 +67,6 @@ server <- function(input, output) {
     data_entry_emps = round( (values()$hours/5) /values()$working_days,digits = 0)
     cost_of_dataEmps = data_entry_emps * input$data_entry_emp
 
-
-
     intermediate_result <- values()$entries_per_year * input$error_margin
     err_entries <- intermediate_result / 100.0
     err_hours_int = err_entries / 60.0
@@ -90,6 +92,28 @@ server <- function(input, output) {
 
     return (field_data)
   })
+
+  travelling_data <- reactive({
+    annual_refuels = if(input$movable_refuels_day != 0){
+      input$movable_refuels_day * 365
+    } else{
+      input$movable_refuels_month * 12
+    }
+
+    movable_refuels = (annual_refuels * input$movable_percent_get) / 100
+    movable_time_spent = round(movable_refuels * input$movable_get_time,digits = 0)
+    movable_time_money = movable_time_spent * input$movable_hemm_price
+
+    data.frame(
+      annual_refuels = annual_refuels,
+      movable_refuels = movable_refuels,
+      movable_time_spent = movable_time_spent,
+      movable_time_money = movable_time_money
+    )
+  })
+
+  # ********************************************
+
 
 # MANPOWER MENU BAR
 
@@ -149,79 +173,92 @@ server <- function(input, output) {
     values()$count_of_dataEntry
   })
 
-  output$manpower_data <- renderTable({
-    # working days
-    data_entry_emps = round( (values()$hours/5) /values()$working_days,digits = 0)
-    cost_of_dataEmps = data_entry_emps * input$data_entry_emp
+  # output$manpower_data <- renderTable({
+  #   # working days
+  #   data_entry_emps = round( (values()$hours/5) /values()$working_days,digits = 0)
+  #   cost_of_dataEmps = data_entry_emps * input$data_entry_emp
+  #
+  #
+  #
+  #   intermediate_result <- values()$entries_per_year * input$error_margin
+  #   err_entries <- intermediate_result / 100.0
+  #   err_hours_int = err_entries / 60.0
+  #   err_hours = round(err_hours_int/25.0,digits=0)
+  #
+  #
+  #   err_data_emp = round(err_hours /values()$working_days + 1,digits = 0)
+  #
+  #
+  #   field_data <- data.frame(
+  #     FTE = c("Count of Field Loggers",
+  #               "Count of Data Entry Operators",
+  #               "Erroneous Entries",
+  #               "Employees for Correction"
+  #               ),
+  #     Value = c(
+  #       values()$count_of_loggers,
+  #       values()$count_of_dataEntry,
+  #       err_entries,
+  #       err_data_emp
+  #       )
+  #   )
+  #
+  #   return (field_data)
+  # })
+  #
+  # output$manpower_data_2 <- renderTable({
+  #   coord_cost = input$coordinator_count * input$shift_count * input$fuel_dispatcher_cost
+  #
+  #   intermediate_result <- values()$entries_per_year * input$error_margin
+  #   err_entries <- intermediate_result / 100.0
+  #   err_hours_int = err_entries / 60.0
+  #   err_hours = round(err_hours_int/25.0,digits=0)
+  #   err_data_emp = round(err_hours /values()$working_days + 1,digits = 0)
+  #   cost_of_err = err_data_emp * input$data_entry_emp
+  #
+  #   field_data <- data.frame(
+  #     FTE = c(
+  #       "Fuel Logger",
+  #       "Data Entry Operator",
+  #       "Accountant/Compiler",
+  #       "Cost of Correction",
+  #       "Fuel Dispatch Coordinator"
+  #       ),
+  #     Cost = c(
+  #       input$fuel_logger_cost * values()$count_of_loggers,
+  #       input$data_entry_emp * values()$count_of_dataEntry,
+  #       500000 * 2,
+  #       cost_of_err,
+  #       coord_cost
+  #       )
+  #   )
+  #
+  #   return (field_data)
+  # })
 
+  output$histogram <- renderPlotly({
 
+    data <- data.frame(cost.df()$Titles,cost.df()$Cost)
+    colnames(data) <- c("Category","Value")
 
-    intermediate_result <- values()$entries_per_year * input$error_margin
-    err_entries <- intermediate_result / 100.0
-    err_hours_int = err_entries / 60.0
-    err_hours = round(err_hours_int/25.0,digits=0)
+    # Create bar plot using ggplot2
+    p <- ggplot(data, aes(x = Category, y = Value)) +
+      geom_bar(stat = "identity", fill = "steelblue") +
+      labs(title = "Costs Plotting", x = "Expenses", y = "Cost")
 
+    # Convert ggplot object to plotly for interactive plots
+    p_plotly <- ggplotly(p, tooltip = c("x", "y"))
 
-    err_data_emp = round(err_hours /values()$working_days + 1,digits = 0)
-
-
-    field_data <- data.frame(
-      FTE = c("Count of Field Loggers",
-                "Count of Data Entry Operators",
-                "Erroneous Entries",
-                "Employees for Correction"
-                ),
-      Value = c(
-        values()$count_of_loggers,
-        values()$count_of_dataEntry,
-        err_entries,
-        err_data_emp
-        )
-    )
-
-    return (field_data)
-  })
-
-  output$manpower_data_2 <- renderTable({
-    coord_cost = input$coordinator_count * input$shift_count * input$fuel_dispatcher_cost
-
-    intermediate_result <- values()$entries_per_year * input$error_margin
-    err_entries <- intermediate_result / 100.0
-    err_hours_int = err_entries / 60.0
-    err_hours = round(err_hours_int/25.0,digits=0)
-    err_data_emp = round(err_hours /values()$working_days + 1,digits = 0)
-    cost_of_err = err_data_emp * input$data_entry_emp
-
-    field_data <- data.frame(
-      FTE = c(
-        "Fuel Logger",
-        "Data Entry Operator",
-        "Accountant/Compiler",
-        "Cost of Correction",
-        "Fuel Dispatch Coordinator"
-        ),
-      Cost = c(
-        input$fuel_logger_cost * values()$count_of_loggers,
-        input$data_entry_emp * values()$count_of_dataEntry,
-        500000 * 2,
-        cost_of_err,
-        coord_cost
-        )
-    )
-
-    return (field_data)
-  })
-
-  output$histogram <- renderPlot({
+    return(p_plotly)
 
     # Create the bar plot
-    barplot(cost.df()$Cost,
-            main="Costs Plotting",
-            names.arg=cost.df()$Titles,
-            xlab="Different Units",
-            ylab="Cost",
-            col="steelblue",
-            axes=FALSE)
+    # barplot(cost.df()$Cost,
+    #         main="Costs Plotting",
+    #         names.arg=cost.df()$Titles,
+    #         xlab="Different Units",
+    #         ylab="Cost",
+    #         col="steelblue",
+    #         axes=FALSE)
   })
 
   output$pieChart <- renderPlot({
@@ -235,51 +272,89 @@ server <- function(input, output) {
 
 
 
-  # PILFERAGE MENU BAR
+  # PILFERAGE OLD
 
-  output$fuel_write_off_yearly <- renderText({
-    values()$fuel_write_off_yearly
+  # output$fuel_write_off_yearly <- renderText({
+  #   values()$fuel_write_off_yearly
+  # })
+  #
+  # output$fuel_per_year <- renderText({
+  #   values()$fuel_per_year
+  # })
+  #
+  # output$pilferage_data <- renderPlot({
+  #   cost_fuel = values()$fuel_per_year * input$fuel_price
+  #   fuel_saved = 0.5 * values()$fuel_per_year
+  #   cost_fuel_saved = values()$fuel_write_off_yearly * input$fuel_price
+  #
+  #   value_names <- c("Litres of Fuel Saved/year", "Estimated Fuel Savings/Year")
+  #   values <- c(fuel_saved,cost_fuel_saved)
+  #
+  #   # Create a data frame from the values
+  #   data <- data.frame(
+  #     name = value_names,
+  #     value = values
+  #   )
+  #
+  #   # ggplot(data, aes(x = name, y = value)) +
+  #   #   geom_bar(stat = "identity", fill = "skyblue") +
+  #   #   labs(title = "Pilferage Comparision", x = "Mindshift Offerings", y = "Cost")
+  #   barplot(data$value,
+  #           main="Pilferage Savings",
+  #           names.arg=value_names,
+  #           xlab="Mindshift Offerings",
+  #           ylab="Cost Difference",
+  #           col="steelblue",
+  #           axes=FALSE)
+  # })
+
+  # PILFERAGE
+
+  output$annual_fuel_consump <- renderText({
+    pilferage_values()$annual_consump_vol
   })
 
-  output$fuel_per_year <- renderText({
-    values()$fuel_per_year
+  output$refuels_per_month <- renderText({
+    ref_per_month <- if(input$hemm_count != 0) {
+      (input$fuel_entry_count * 30) / input$hemm_count
+    } else {
+      (input$fuel_entry_count * 30) / 100
+    }
+    return(ref_per_month)
   })
 
-  output$pilferage_data <- renderPlot({
-    cost_fuel = values()$fuel_per_year * input$fuel_price
-    fuel_saved = 0.5 * values()$fuel_per_year
-    cost_fuel_saved = values()$fuel_write_off_yearly * input$fuel_price
+  output$refuels_per_year <- renderText({
+    ref_per_year <- if(input$hemm_count != 0) {
+      (input$fuel_entry_count * 365) / input$hemm_count
+    } else {
+      (input$fuel_entry_count * 365) / 100
+    }
+    return(ref_per_year)
+  })
 
-    value_names <- c("Litres of Fuel Saved/year", "Estimated Fuel Savings/Year")
-    values <- c(fuel_saved,cost_fuel_saved)
+  output$underreported_calculations <- renderTable({
+    pilferage_percent = (pilferage_values()$under_reporting_yearly / pilferage_values()$annual_consump_vol) * 100
 
-    # Create a data frame from the values
-    data <- data.frame(
-      name = value_names,
-      value = values
+    data.frame(
+      Field = c("Daily over reported volume across fleet","Yearly figure","Percentage of Yearly consumption"),
+      Values = c(pilferage_values()$ur_daily_vol, pilferage_values()$under_reporting_yearly, pilferage_percent)
     )
-
-    # ggplot(data, aes(x = name, y = value)) +
-    #   geom_bar(stat = "identity", fill = "skyblue") +
-    #   labs(title = "Pilferage Comparision", x = "Mindshift Offerings", y = "Cost")
-    barplot(data$value,
-            main="Pilferage Savings",
-            names.arg=value_names,
-            xlab="Mindshift Offerings",
-            ylab="Cost Difference",
-            col="steelblue",
-            axes=FALSE)
   })
 
-  # PILFERAGE NEW
+  output$stolen_assumption <- renderTable({
+    pilferage_percent = (pilferage_values()$bowser_fuel_sold_yearly / pilferage_values()$annual_consump_vol) * 100
+
+    data.frame(
+      Field = c("Yearly figure","Percentage of Yearly consumption"),
+      Values = c(pilferage_values()$bowser_fuel_sold_yearly, pilferage_percent)
+    )
+  })
 
   output$pilferage_hist <- renderPlotly({
-    vol_saved_yearly = (pilferage_values()$under_reporting_yearly + pilferage_values()$driver_steal_yearly + pilferage_values()$bowser_fuel_sold_yearly)
+    pilferage_percent = (pilferage_values()$vol_saved_yearly / pilferage_values()$annual_consump_vol) * 100
 
-    pilferage_percent = (vol_saved_yearly / pilferage_values()$annual_consump_vol) * 100
-
-    value_names <- c("Under Reporting", "Driver Stealing", "Fuel Sold Illegally", "Total Saved")
-    values <- c(pilferage_values()$under_reporting_yearly, pilferage_values()$driver_steal_yearly, pilferage_values()$bowser_fuel_sold_yearly, vol_saved_yearly)
+    value_names <- c("Under Reporting", "Fuel Sold Illegally", "Total Saved")
+    values <- c(pilferage_values()$under_reporting_yearly, pilferage_values()$bowser_fuel_sold_yearly, pilferage_values()$vol_saved_yearly)
 
     # Create a data frame from the values
     data <- data.frame(
@@ -298,36 +373,60 @@ server <- function(input, output) {
     return(p_plotly)
   })
 
-  output$bowser_vol <- renderText({
-    "15"
-  })
-  output$bowser_fuel_mov <- renderText({
-    "some val"
+  output$pilferage_explanation <- renderText({
+    pilferage_values()$vol_saved_yearly
   })
 
-  output$underreported_assumption <- renderTable({
-    pilferage_percent = (pilferage_values()$under_reporting_yearly / pilferage_values()$annual_consump_vol) * 100
+  output$pilferage_cost <- renderText({
+    pilferage_values()$vol_saved_yearly * 86
+  })
 
-    data.frame(
-      Field = c("Yearly figure","Percentage of Yearly consumption"),
-      Vaues = c(pilferage_values()$under_reporting_yearly, pilferage_percent)
+  # MOVABLE VEHICLE COST CALCULATION
+
+  output$movable_refuel_sumannual <- renderText({
+    travelling_data()$annual_refuels
+  })
+  output$movable_time_spent <- renderText({
+    travelling_data()$movable_time_spent
+  })
+  output$movable_visualisation <- renderPlotly({
+    data <- data.frame(
+      category = c("Movement Statistics"),
+      value1 = c(travelling_data()$annual_refuels),
+      value2 = c(travelling_data()$movable_time_spent),
+      value3 = c(travelling_data()$movable_time_spent * input$movable_hemm_price)
     )
-  })
-  output$daily_stealing_assumption <- renderTable({
-    pilferage_percent = (pilferage_values()$driver_steal_yearly / pilferage_values()$annual_consump_vol) * 100
 
-    data.frame(
-      Field = c("Yearly figure","Percentage of Yearly consumption"),
-      Vaues = c(pilferage_values()$driver_steal_yearly, pilferage_percent)
-    )
-  })
-  output$stolen_assumption <- renderTable({
-    pilferage_percent = (pilferage_values()$bowser_fuel_sold_yearly / pilferage_values()$annual_consump_vol) * 100
+    colnames(data)[2:4] <- c("Annual Refuel Count", "Overall Time Spent","Cost of Time")
 
-    data.frame(
-      Field = c("Yearly figure","Percentage of Yearly consumption"),
-      Vaues = c(pilferage_values()$bowser_fuel_sold_yearly, pilferage_percent)
-    )
-  })
+    # Reshape data for ggplot
+    data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent","Cost of Time"), names_to = "variable", values_to = "value")
 
+    # Plot using ggplot
+    # gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
+    #   geom_bar(stat = "identity", position = "dodge") +
+    #   scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
+    #   labs(title = "",
+    #        x = "Category", y = "Value") +
+    #   theme_minimal()
+
+    gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
+      geom_bar(stat = "identity", position = "dodge") +
+      scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
+      labs(title = "",
+           x = "Movement Statistics", y = "Value") +
+      theme_minimal() +
+      scale_y_continuous(trans = "log10")
+
+    # ggplotly(gg, originalData = TRUE) %>%
+    #   style(hoverinfo = "text",
+    #         text = paste("Variable: ", data_long$Category, "<br>Value: ", 10^data_long$Value))
+
+
+    # Convert ggplot to plotly
+    ggplotly(gg)
+  })
+  output$movale_money_loss_hours <- renderText({
+    travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
+  })
 }
