@@ -43,14 +43,37 @@ server <- function(input, output) {
 
   pilferage_values <- reactive({
     ur_daily_vol <- input$ur_day_count * input$ur_day_vol
-    vol_saved_yearly = (ur_daily_vol * 365) + (input$bowser_fuel_sold_monthly * 12)
+    under_reporting_yearly =  ur_daily_vol * 365
+
+    bowser_fuel_sold_yearly = input$tank_steals_monthly * input$bowser_theft_vol * 12
+
+    vol_saved_yearly = under_reporting_yearly + bowser_fuel_sold_yearly
+
+
+    saving_ur = (1 - input$pilferage_save_ur/100) * under_reporting_yearly
+    saving_ftheft = (1 - input$pilferage_save_theft/100) * bowser_fuel_sold_yearly
+
+    ref_per_month = if(input$hemm_count != 0) {
+      (input$fuel_entry_count * 30) / input$hemm_count
+    } else {
+      (input$fuel_entry_count * 30) / 100
+    }
+
+    ref_per_month = round(ref_per_month,0)
+    ref_per_year = round(ref_per_month * 12,digits=0)
 
     data.frame(
       ur_daily_vol = ur_daily_vol,
-      under_reporting_yearly =  ur_daily_vol * 365,
-      bowser_fuel_sold_yearly = input$bowser_fuel_sold_monthly * 12,
+      under_reporting_yearly =  under_reporting_yearly,
+      bowser_fuel_sold_yearly = bowser_fuel_sold_yearly,
       annual_consump_vol = values()$annual_consump_vol,
-      vol_saved_yearly = vol_saved_yearly
+
+      ref_per_month = ref_per_month,
+      ref_per_year = ref_per_year,
+
+      vol_saved_yearly = vol_saved_yearly,
+      saving_ftheft = saving_ftheft,
+      saving_ur = saving_ur
     )
   })
 
@@ -113,10 +136,11 @@ server <- function(input, output) {
   })
 
   travelling_data <- reactive({
-    annual_refuels = if(input$movable_refuels_day != 0){
-      input$movable_refuels_day * 365
-    } else{
-      input$movable_refuels_month * 12
+
+    annual_refuels = if(input$hemm_count != 0) {
+      (input$fuel_entry_count * 365) / input$hemm_count
+    } else {
+      (input$fuel_entry_count * 365) / 100
     }
 
     movable_refuels = (annual_refuels * input$movable_percent_get) / 100
@@ -215,7 +239,7 @@ server <- function(input, output) {
     gg <- ggplot(data) +
       geom_bar(aes(x = Category, y = base_value, fill="original"), stat = "identity", position="dodge") +
       geom_bar(aes(x = Category, y = saved_value, fill="saved"), stat = "identity", position="dodge") +
-      scale_fill_manual(values = c("original" = "grey", "saved" = "blue")) +
+      scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions")
 
     # Convert ggplot object to plotly for interactive plots
@@ -235,41 +259,6 @@ server <- function(input, output) {
 
 
 
-  # PILFERAGE OLD
-
-  # output$fuel_write_off_yearly <- renderText({
-  #   values()$fuel_write_off_yearly
-  # })
-  #
-  # output$fuel_per_year <- renderText({
-  #   values()$fuel_per_year
-  # })
-  #
-  # output$pilferage_data <- renderPlot({
-  #   cost_fuel = values()$fuel_per_year * input$fuel_price
-  #   fuel_saved = 0.5 * values()$fuel_per_year
-  #   cost_fuel_saved = values()$fuel_write_off_yearly * input$fuel_price
-  #
-  #   value_names <- c("Litres of Fuel Saved/year", "Estimated Fuel Savings/Year")
-  #   values <- c(fuel_saved,cost_fuel_saved)
-  #
-  #   # Create a data frame from the values
-  #   data <- data.frame(
-  #     name = value_names,
-  #     value = values
-  #   )
-  #
-  #   # ggplot(data, aes(x = name, y = value)) +
-  #   #   geom_bar(stat = "identity", fill = "skyblue") +
-  #   #   labs(title = "Pilferage Comparision", x = "Mindshift Offerings", y = "Cost")
-  #   barplot(data$value,
-  #           main="Pilferage Savings",
-  #           names.arg=value_names,
-  #           xlab="Mindshift Offerings",
-  #           ylab="Cost Difference",
-  #           col="steelblue",
-  #           axes=FALSE)
-  # })
 
   # PILFERAGE
 
@@ -278,21 +267,12 @@ server <- function(input, output) {
   })
 
   output$refuels_per_month <- renderText({
-    ref_per_month <- if(input$hemm_count != 0) {
-      (input$fuel_entry_count * 30) / input$hemm_count
-    } else {
-      (input$fuel_entry_count * 30) / 100
-    }
-    return(ref_per_month)
+    pilferage_values()$ref_per_month
   })
 
+
   output$refuels_per_year <- renderText({
-    ref_per_year <- if(input$hemm_count != 0) {
-      (input$fuel_entry_count * 365) / input$hemm_count
-    } else {
-      (input$fuel_entry_count * 365) / 100
-    }
-    return(ref_per_year)
+    pilferage_values()$ref_per_year
   })
 
   output$underreported_calculations <- renderTable({
@@ -316,19 +296,30 @@ server <- function(input, output) {
   output$pilferage_hist <- renderPlotly({
     pilferage_percent = (pilferage_values()$vol_saved_yearly / pilferage_values()$annual_consump_vol) * 100
 
-    value_names <- c("Under Reporting", "Fuel Sold Illegally", "Total Saved")
-    values <- c(pilferage_values()$under_reporting_yearly, pilferage_values()$bowser_fuel_sold_yearly, pilferage_values()$vol_saved_yearly)
+    value_names <- c("Under Reporting", "Fuel Sold Illegally")
+    original_value <- c(
+      pilferage_values()$under_reporting_yearly,
+      pilferage_values()$bowser_fuel_sold_yearly
+      )
+    saved_value <- c(
+      pilferage_values()$saving_ur,
+      pilferage_values()$saving_ftheft
+    )
 
     # Create a data frame from the values
     data <- data.frame(
       Category = value_names,
-      Value = values
+      original = original_value,
+      saved = saved_value
     )
 
     # Create bar plot using ggplot2
-    p <- ggplot(data, aes(x = Category, y = Value)) +
-      geom_bar(stat = "identity", fill = "steelblue") +
-      labs(title = "", x = "Category", y = "Volume Saved")
+    p <- ggplot(data) +
+      geom_bar(aes(x=Category, y=original, fill="original_col"),stat = "identity",position = "dodge") +
+      geom_bar(aes(x=Category, y=saved, fill="saved_col"),stat = "identity",position = "dodge") +
+      scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
+      labs(fill = "Saving Comparisions")
+
 
     # Convert ggplot object to plotly for interactive plots
     p_plotly <- ggplotly(p, tooltip = c("x", "y"))
@@ -344,6 +335,9 @@ server <- function(input, output) {
     pilferage_values()$vol_saved_yearly * 86
   })
 
+
+
+
   # MOVABLE VEHICLE COST CALCULATION
 
   output$movable_refuel_sumannual <- renderText({
@@ -351,6 +345,9 @@ server <- function(input, output) {
   })
   output$movable_time_spent <- renderText({
     travelling_data()$movable_time_spent
+  })
+  output$rf_per_month <- renderText({
+    pilferage_values()$ref_per_month
   })
   output$movable_visualisation <- renderPlotly({
     data <- data.frame(

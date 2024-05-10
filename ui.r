@@ -34,6 +34,8 @@ ui <- shinyUI(fluidPage(
 
   navbarPage("Menu",
 
+             # MANPOWER TAB
+
              tabPanel("Manpower Calculation",
                           h1("Enter Work Parameters"),
                       sidebarLayout(
@@ -86,46 +88,11 @@ ui <- shinyUI(fluidPage(
                             column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
                             column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
                           )
-
-
-
-                          # tableOutput("manpower_data"),
-                          # tableOutput("manpower_data_2"),
-                          # br(),
-                          # card(
-                          #   card_header("Info:"),
-                          #   "Salary of data entry operator: 3,00,000",
-                          #   br(),
-                          #   "For a full time employee(FTE), woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators",
-                          #   br(),
-                          #   "Fuel coordinator is accounted by 'x' number of shifts * 'y' coordinators required, with salary estimate of 8,00,000"
                         )
                       )
              ),
 
-             # tabPanel("Pilferage",
-             #          sidebarLayout(
-             #            sidebarPanel(
-             #              numericInput("fuel_per_day","Litres of fuel consumed per day",value = 8000),
-             #              br(),
-             #              "Litres of fuel consumed/year",
-             #              textOutput("fuel_per_year"),
-             #              br(),
-             #              # sliderInput("fuel_loss_margin","Percetage loss of fuel lost to pilferage: ",value=5,min=0,max=10),
-             #              numericInput("fuel_write_off_monthly","Litres of fuel written off per month",value=1000),
-             #              br(),
-             #              "Litres of fuel written off/year",
-             #              textOutput("fuel_write_off_yearly"),
-             #              br(),
-             #              numericInput("fuel_price","Enter the current price of fuel/ litre: ",value=86),
-             #              "Assuming the current price of fuel to be 86"
-             #            ),
-             #            mainPanel(
-             #              # Add output for part 2
-             #              plotOutput("pilferage_data")
-             #            )
-             #          )
-             # ),
+             # PILFERAGE
 
              tabPanel("Pilferage",
                       fluidPage(
@@ -156,24 +123,26 @@ ui <- shinyUI(fluidPage(
                                                  column(width = 6,
                                                         fluidRow(
                                                           h3('Under Refueling and Over Reporting'),
-                                                          numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 5),
-                                                          numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 100),
+                                                          numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 40),
+                                                          numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 10),
                                                         ),
                                                         fluidRow(
                                                           tableOutput("underreported_calculations")
                                                         ),
+                                                        fluidRow(numericInput("pilferage_save_ur","% Savings from Over and Under reporting:",value=10))
                                                  ),
 
                                                  column(width = 6,
                                                         fluidRow(
                                                           h3('HEMM Fuel Tank Theft'),
-                                                          numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=10),
-                                                          numericInput("bowser_fuel_sold_monthly", "How many litres of fuel do you think is stolen each instance?", value = 1000),
+                                                          numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=40),
+                                                          numericInput("bowser_theft_vol", "How many litres of fuel do you think is stolen each instance?", value = 1000),
                                                           br()
                                                         ),
                                                         fluidRow(
                                                           tableOutput("stolen_assumption")
-                                                        )
+                                                        ),
+                                                        fluidRow(numericInput("pilferage_save_theft","% Savings from HEMM Tank Theft:",value=10))
                                                  )
                                                  ),
                                           column(width = 6,
@@ -191,31 +160,23 @@ ui <- shinyUI(fluidPage(
               )
       ),
 
+      # MOVEMENT TAB
+
       tabPanel("Movement Statistics",
                fluidPage(
                  fluidRow(
                    h1("Movable Vehicle Summary/HEMM"),
                  ),
                  fluidRow(
-                   column(width=2,numericInput("movable_refuels_day","Number of refuels/day",value=0)),
-                   column(width=2,numericInput("movable_refuels_month","Number of refuels/month",value=0)),
-                   column(width=2,numericInput("movable_percent_get","% of refuellings from SFS",value=0)),
-                   column(width=2,numericInput("movable_get_time","Time Spent in each trip",value=1)),
-                   column(width=2,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
-                   # column(width=6,
-                   #        fluidRow(numericInput("movable_refuels_day","Number of refuels/day",value=0),
-                   #                 numericInput("movable_refuels_month","Number of refuels/month",value=0)),
-                   #        fluidRow(h3("Number of refuels/annually"),
-                   #                 verbatimTextOutput("movable_refuel_sumannual"))
-                   #        ),
-                   # column(width=6,
-                   #        fluidRow(numericInput("movable_percent_get","Percentage of refuellings/total going to SFS",value=0),
-                   #                 numericInput("movable_get_time","Time Spent in each trip",value=1),
-                   #                 numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)
-                   #                 ),
-                   #        fluidRow(h3("Overall time spent in refeulling"),
-                   #                 verbatimTextOutput("movable_time_spent"))
-                   #        )
+                   column(3,
+                          fluidRow(
+                            h5("Refuels/Month"),
+                            verbatimTextOutput("rf_per_month")
+                            )),
+                   column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=0)),
+                   column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
+                   column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
+
                  ),
                  fluidRow(column(width=6,
                                  plotlyOutput("movable_visualisation")),
@@ -239,16 +200,4 @@ ui <- shinyUI(fluidPage(
                )
       )
   )
-  )
-             # tabPanel("Tab 4",
-             #          sidebarLayout(
-             #            sidebarPanel(
-             #              # Add sliders and numeric inputs for part 4
-             #            ),
-             #            mainPanel(
-             #              # Add output for part 4
-             #            )
-             #          )
-             # )
-
-
+)
