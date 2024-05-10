@@ -165,14 +165,13 @@ ui <- shinyUI(fluidPage(
       tabPanel("Movement Statistics",
                fluidPage(
                  fluidRow(
-                   h1("Movable Vehicle Summary/HEMM"),
+                   column(6,h1("Movable Vehicle Summary/HEMM")),
+                   column(6,fluidRow(
+                     h4("Refuels/HEMM//month"),
+                     verbatimTextOutput("refuels_per_month")))
                  ),
                  fluidRow(
-                   column(3,
-                          fluidRow(
-                            h5("Refuels/Month"),
-                            verbatimTextOutput("rf_per_month")
-                            )),
+                   column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),
                    column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=0)),
                    column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
                    column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
