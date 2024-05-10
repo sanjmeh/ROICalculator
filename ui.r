@@ -4,6 +4,7 @@ library(shinydashboard)
 library(DT)
 library(plotly)
 library(ggplot2)
+library(shinyalert)
 
 ui <- shinyUI(fluidPage(
 
@@ -47,8 +48,11 @@ ui <- shinyUI(fluidPage(
                           h5("Entries per year: (entries/day * 365)"),
                           verbatimTextOutput("entries_per_year",TRUE),
                           br(),
-                          h6("Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction."),
-                          h6("5 mins per entry ~ 3 mins for entry and 2 mins for correction"),
+                          # h6("Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction."),
+                          # h6("5 mins per entry ~ 3 mins for entry and 2 mins for correction"),
+                          actionButton("dto_count_info", "Info",
+                                       icon("lightbulb"),
+                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
                           h4("Number of Data Entry Operators required per year."),
                           verbatimTextOutput("data_entry_count",TRUE),
                           br(),
@@ -68,6 +72,15 @@ ui <- shinyUI(fluidPage(
                             )
                           ),
                           fluidRow(
+                            plotlyOutput("histogram"),
+                          ),
+                          fluidRow(
+                            column(3,numericInput("manpower_save_accounts","% Saving in Accountants",value=5)),
+                            column(3,numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5)),
+                            column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
+                            column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
+                          ),
+                          fluidRow(
                             column(6,
                                    h3("Assumptions"),
                                    p("For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators."),
@@ -78,15 +91,6 @@ ui <- shinyUI(fluidPage(
                                    br(),
                                    p("Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated")),
                             column(6,plotOutput("pieChart"))
-                          ),
-                          fluidRow(
-                            plotlyOutput("histogram"),
-                          ),
-                          fluidRow(
-                            column(3,numericInput("manpower_save_accounts","% Saving in Accountants",value=5)),
-                            column(3,numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5)),
-                            column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
-                            column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
                           )
                         )
                       )
@@ -107,6 +111,9 @@ ui <- shinyUI(fluidPage(
                                  fluidRow(
                                    column(width=6,
                                           h4("Average Fuel Consumption/Year:"),
+                                          actionButton("annualf_consump_info", "Info",
+                                                       icon("lightbulb"),
+                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
                                           verbatimTextOutput("annual_fuel_consump")
                                    ),
                                    column(width=3,
@@ -123,6 +130,10 @@ ui <- shinyUI(fluidPage(
                                                  column(width = 6,
                                                         fluidRow(
                                                           h3('Under Refueling and Over Reporting'),
+                                                          # useShinyalert(),  # Set up shinyalert
+                                                          actionButton("ur_info", "Info",
+                                                                       icon("lightbulb"),
+                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
                                                           numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 40),
                                                           numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 10),
                                                         ),
@@ -135,6 +146,9 @@ ui <- shinyUI(fluidPage(
                                                  column(width = 6,
                                                         fluidRow(
                                                           h3('HEMM Fuel Tank Theft'),
+                                                          actionButton("theft_info","Info",
+                                                                       icon("lightbulb"),
+                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
                                                           numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=40),
                                                           numericInput("bowser_theft_vol", "How many litres of fuel do you think is stolen each instance?", value = 1000),
                                                           br()
@@ -168,7 +182,7 @@ ui <- shinyUI(fluidPage(
                    column(6,h1("Movable Vehicle Summary/HEMM")),
                    column(6,fluidRow(
                      h4("Refuels/HEMM//month"),
-                     verbatimTextOutput("refuels_per_month")))
+                     verbatimTextOutput("ref_per_month")))
                  ),
                  fluidRow(
                    column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),

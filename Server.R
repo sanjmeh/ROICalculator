@@ -32,8 +32,8 @@ server <- function(input, output) {
       count_of_dataEntry = count_of_dataEntry,
       working_days = working_days,
 
-      hours = (entries_per_year * 3) / 60,
-      days = round((entries_per_year * 3) / 60 / 5, digits = 0),
+      hours = (entries_per_year * 5) / 60,
+      days = round((entries_per_year * 5) / 60 / 5, digits = 0),
       annual_consump_vol = annual_consump_vol,
 
       logger_total_cost = logger_total_cost,
@@ -161,9 +161,20 @@ server <- function(input, output) {
   })
 
   # ********************************************
+  # ********************************************
+  # ********************************************
+  # ********************************************
 
 
 # MANPOWER MENU BAR
+
+  observeEvent(input$dto_count_info, {
+    shinyalert("Count of Data Entry Operators:", "Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction.\n
+               5 mins per entry ~ 3 mins for entry and 2 mins for correction\n
+               Assuming working hours productivity to be 5hrs/8hrs\n
+               (entries_per_year * 5) / 60 / 5 : number of working days\n
+               number of working days / actual working days/year = number of Data Entry Operators", type = "info")
+  })
 
   output$logger_count <- renderText({
     values()$count_of_loggers
@@ -239,10 +250,10 @@ server <- function(input, output) {
   output$histogram <- renderPlotly({
 
     data <- data.frame(cost.df()$Titles, cost.df()$Cost, cost.df()$Saved)
-    colnames(data) <- c("Category","base_value","saved_value")
+    colnames(data) <- c("Category","Metrics","saved_value")
 
     gg <- ggplot(data) +
-      geom_bar(aes(x = Category, y = base_value, fill="original"), stat = "identity", position="dodge") +
+      geom_bar(aes(x = Category, y = Metrics, fill="original"), stat = "identity", position="dodge") +
       geom_bar(aes(x = Category, y = saved_value, fill="saved"), stat = "identity", position="dodge") +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions")
@@ -267,12 +278,29 @@ server <- function(input, output) {
 
   # PILFERAGE
 
+  observeEvent(input$annualf_consump_info,{
+                shinyalert("Annual Fuel Consumption Calculation","Case1: If Hemm count and Hemm consumption is specified:\n
+                           HEMM daily consumption * count of HEMM * 365 days\n
+                           Case2: If HEMM info not specified:\n
+                           Each bowser assumed to fuel 65 HEMMs having 70lt daily consumption * 365 days",type="info")
+    })
+
   output$annual_fuel_consump <- renderText({
     pilferage_values()$annual_consump_vol
   })
 
   output$refuels_per_month <- renderText({
     pilferage_values()$ref_per_month
+  })
+
+  # info modals using shinyalert
+  observeEvent(input$ur_info, {
+    shinyalert("Over and Under reporting", "Alleged collusion between a diesel bowser driver and fuel supplier results in discrepancies between fuel input records and actual amounts.\n
+               Falsified records and the misappropriation of 20 liters of fuel for offsite sale.", type = "info")
+  })
+  observeEvent(input$theft_info, {
+    shinyalert("HEMM Fuel Tank Theft", "Collusion between a heavy machinery operator and off-site accomplices leads to the theft of fuel from the machine's tank for resale.\n
+               Extended idling periods are employed to obscure the fuel loss", type = "info")
   })
 
 
@@ -351,7 +379,7 @@ server <- function(input, output) {
   output$movable_time_spent <- renderText({
     travelling_data()$movable_time_spent
   })
-  output$rf_per_month <- renderText({
+  output$ref_per_month <- renderText({
     pilferage_values()$ref_per_month
   })
   output$movable_visualisation <- renderPlotly({
