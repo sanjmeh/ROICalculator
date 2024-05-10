@@ -149,11 +149,14 @@ server <- function(input, output) {
     movable_time_spent = round(movable_refuels * input$movable_get_time,digits = 0)
     movable_time_money = movable_time_spent * input$movable_hemm_price
 
+    annual_movable_sum = movable_time_spent * input$movable_hemm_price * input$movable_hemm_count
+
     data.frame(
       annual_refuels = annual_refuels,
       movable_refuels = movable_refuels,
       movable_time_spent = movable_time_spent,
-      movable_time_money = movable_time_money
+      movable_time_money = movable_time_money,
+      annual_movable_sum = annual_movable_sum
     )
   })
 
@@ -392,7 +395,7 @@ server <- function(input, output) {
     travelling_data()$movable_time_spent * input$movable_hemm_price
   })
   output$movale_annual_money_loss_hours <- renderText({
-    travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
+    travelling_data()$annual_movable_sum
   })
 
 
@@ -410,7 +413,7 @@ server <- function(input, output) {
     pl_sum = pilferage_values()$vol_saved_yearly * 86
 
     # movement sum
-    mv_sum = travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
+    mv_sum = travelling_data()$annual_movable_sum
 
 
     x= list("Manpower", "Pilferage", "Movement","Annual SUm")
