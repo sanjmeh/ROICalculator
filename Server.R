@@ -427,6 +427,9 @@ server <- function(input, output) {
     ggplotly(gg)
   })
   output$movale_money_loss_hours <- renderText({
+    travelling_data()$movable_time_spent * input$movable_hemm_price
+  })
+  output$movale_annual_money_loss_hours <- renderText({
     travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
   })
 }
