@@ -202,7 +202,7 @@ ui <- shinyUI(fluidPage(
       tabPanel("Movement Statistics",
                fluidPage(
                  fluidRow(
-                   h1("Movable Vehicle Summary"),
+                   h1("Movable Vehicle Summary/HEMM"),
                  ),
                  fluidRow(
                    column(width=2,numericInput("movable_refuels_day","Number of refuels/day",value=0)),
@@ -231,15 +231,22 @@ ui <- shinyUI(fluidPage(
                                           h3("Number of refuels/annually"),
                                           verbatimTextOutput("movable_refuel_sumannual")),
                                    column(width=3,
-                                          h3("Total refeulling time"),
+                                          h3("Total self refeulling time"),
                                           verbatimTextOutput("movable_time_spent")),
                                    fluidRow(
-                                     h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for heavy machinery"),
-                                     verbatimTextOutput("movale_money_loss_hours"))),
+                                     column(width=5,
+                                            h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for single heavy machinery"),
+                                            verbatimTextOutput("movale_money_loss_hours")),
+                                     column(width=5,
+                                            h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for all heavy machinery"),
+                                            verbatimTextOutput("movale_annual_money_loss_hours"))
+                                     )
+                                     )
+                          ),
                  )
                )
-
-               )
+      )
+  )
   )
              # tabPanel("Tab 4",
              #          sidebarLayout(
@@ -251,5 +258,5 @@ ui <- shinyUI(fluidPage(
              #            )
              #          )
              # )
-)
-)
+
+
