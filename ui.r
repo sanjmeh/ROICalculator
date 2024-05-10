@@ -197,7 +197,13 @@ ui <- shinyUI(fluidPage(
                                      )
                           ),
                  )
-               )
+               ),
+
+      tabPanel("Summary",
+               fluidPage(
+                h1("Overall Summary"),
+                plotlyOutput("summary_waterfall")
+               ))
       )
   )
 )
