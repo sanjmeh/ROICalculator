@@ -12,10 +12,12 @@ server <- function(input, output) {
     # data frame scope prevents creation and usage in the same scope hence outside creation
     entries_per_year = input$fuel_entry_count * 365
     working_days = 365 - 104 - 20 - 12
+
     # annual_consump_vol = input$hemm_count * input$hemm_daily_consump * 365
     annual_consump_vol = if( input$hemm_count > 0 && input$hemm_daily_consump > 0 )
       input$hemm_count * input$hemm_daily_consump * 365 else
         input$truck_count * 65 * 70 * 365 # each bowser fuelling 65 hemm, each hemm daily consumption of 70lts
+
     count_of_loggers = input$shift_count * input$truck_count * input$logger_count_per_bowser
     count_of_dataEntry = round((entries_per_year * 5) / 60 / 5 / working_days, digits = 0)
 
@@ -391,5 +393,43 @@ server <- function(input, output) {
   })
   output$movale_annual_money_loss_hours <- renderText({
     travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
+  })
+
+
+
+  # SUMMARY
+
+  output$summary_waterfall <- renderPlotly({
+    # manpower sum
+    mp_sum = values()$logger_total_cost +
+      values()$dto_total_cost +
+      values()$dipatcher_total_cost +
+      values()$accountant_total_cost + 0
+
+    # pilferage sum
+    pl_sum = pilferage_values()$vol_saved_yearly * 86
+
+    # movement sum
+    mv_sum = travelling_data()$movable_time_spent * input$movable_hemm_price * input$hemm_count
+
+
+    x= list("Manpower", "Pilferage", "Movement","Annual SUm")
+    measure= c("relative", "relative", "relative", "total")
+    text= c("Manpower Savings", "Pilferage Savings","Movement Savings","Total Sum (₹)")
+    y= c(mp_sum,pl_sum,mv_sum,0)
+    data = data.frame(x=factor(x,levels=x),measure,text,y)
+
+    fig <- plot_ly(
+      data, name = "Savings", type = "waterfall", measure = ~measure,
+      x = ~x, textposition = "outside", y= ~y, text =~text,
+      connector = list(line = list(color= "rgb(63, 63, 63)")))
+    fig <- fig %>%
+      layout(title = "Overall Annual Savings across 3 Domains",
+             xaxis = list(title = "Domains"),
+             yaxis = list(title = "Metrics"),
+             autosize = TRUE,
+             showlegend = TRUE)
+
+    fig
   })
 }
