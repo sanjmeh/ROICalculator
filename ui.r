@@ -39,34 +39,26 @@ ui <- shinyUI(fluidPage(
                       sidebarLayout(
                         sidebarPanel(
                           numericInput("logger_count_per_bowser","Number of fuel data recorders/bowser",value=1),
-                          "Total numbers of fuel dispatch loggers: bowser count * logger per bowser",
-                          textOutput("logger_count"),
+                          h5("Total numbers of fuel dispatch loggers: bowser count * logger per bowser"),
+                          verbatimTextOutput("logger_count",TRUE),
                           br(),
-                          "Entries per year: (entries/day * 365)",
-                          textOutput("entries_per_year"),
+                          h5("Entries per year: (entries/day * 365)"),
+                          verbatimTextOutput("entries_per_year",TRUE),
                           br(),
-                          "Number of Data Entry Operators required per year can be calculated accordingly.",
+                          h6("Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction."),
+                          h6("5 mins per entry ~ 3 mins for entry and 2 mins for correction"),
+                          h4("Number of Data Entry Operators required per year."),
+                          verbatimTextOutput("data_entry_count",TRUE),
+                          br(),
                           numericInput("coordinator_count","Number of fuel dispatch coordinators per shift",value=1),
-                          numericInput("error_margin","Error correction for manual data entry: ",value=5),
-                          "Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction.",
-                          sliderInput("compilation_emps","Number of FTE for data aggregation(at month end): ",value=2,min=1,max=5),
-                          # numericInput("hemm_fuel_trucks","Enter how many fuel trucks required per HEMM:",value=3),
-                          # "HEMM stands for Heavy Earth Moving Machinery",
-                          "Considering 3 minutes/entry, required data entry operators required per year:",
-                          textOutput("data_entry_count"),
+                          numericInput("accountant_count","Number of FTE for data aggregation(at month end): ",value=2),
                           br(),
                           sliderInput("fuel_logger_cost","Avg cost of fuel logger: ",value=150000,min=100000,max=300000),
                           sliderInput("fuel_dispatcher_cost","Avg cost of fuel dispatch coordinator: ",value=500000,min=100000,max=1000000),
                           sliderInput("data_entry_emp","Avg cost of data entry FTE: ",value=300000,min=100000,max=500000),
+                          sliderInput("accountant_cost","Avg cost of accountant FTE: ",value=300000,min=100000,max=800000),
                         ),
                         mainPanel(
-                          fluidRow(
-                            column(width = 6,
-                                   DT::dataTableOutput("myTable")
-                            ),
-                            column(width=6,
-                                   DT::dataTableOutput("myTable2"))
-                          ),
                           fluidRow(
                             splitLayout(
                               tableOutput("manpower_data"),
@@ -74,25 +66,25 @@ ui <- shinyUI(fluidPage(
                             )
                           ),
                           fluidRow(
-                            box(
-                              title = "Calculation Briefing",    # Title of the card
-                              status = "primary",                 # Color of the box
-                              solidHeader = TRUE,                 # Solid color header
-                              # collapsible = TRUE,                 # Allows the box to be collapsed
-                              "For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators",  # Content
-                              br(),
-                              br(),
-                              "Data Aggregator/Compiler FTE: is estimated at 5 LPA * number of compilers required to meet requirements in a year",
-                              br(),
-                              br(),
-                              "Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated"
-                            )
+                            column(6,
+                                   h3("Assumptions"),
+                                   p("For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators."),
+                                   br(),
+                                   br(),
+                                   p("Data Aggregator/Compiler FTE: is estimated at 5 LPA * number of compilers required to meet requirements in a year."),
+                                   br(),
+                                   br(),
+                                   p("Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated")),
+                            column(6,plotOutput("pieChart"))
                           ),
                           fluidRow(
                             plotlyOutput("histogram"),
                           ),
                           fluidRow(
-                            plotOutput("pieChart")
+                            column(3,numericInput("manpower_save_accounts","% Saving in Accountants",value=5)),
+                            column(3,numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5)),
+                            column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
+                            column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
                           )
 
 
