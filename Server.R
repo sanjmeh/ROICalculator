@@ -2,6 +2,7 @@ library(shiny)
 library(DT)
 library(ggplot2)
 library(plotly)
+library(scales)
 
 server <- function(input, output) {
 
@@ -11,6 +12,8 @@ server <- function(input, output) {
     # these variables are out since they are being used for calculation in data frame
     # data frame scope prevents creation and usage in the same scope hence outside creation
     entries_per_year = input$fuel_entry_count * 365
+    error_entries = entries_per_year * input$error_margin / 100
+    corrent_entries = entries_per_year - error_entries
     working_days = 365 - 104 - 20 - 12
 
     # annual_consump_vol = input$hemm_count * input$hemm_daily_consump * 365
@@ -19,7 +22,11 @@ server <- function(input, output) {
         input$truck_count * 65 * 70 * 365 # each bowser fuelling 65 hemm, each hemm daily consumption of 70lts
 
     count_of_loggers = input$shift_count * input$truck_count * input$logger_count_per_bowser
-    count_of_dataEntry = round((entries_per_year * 5) / 60 / 5 / working_days, digits = 0)
+    # count_of_dataEntry = round((entries_per_year * 5) / 60 / 5 / working_days, digits = 0)
+
+
+    count_of_dataEntry = round((corrent_entries * 3) / 60 / 5 / working_days, digits = 0) +
+      round((error_entries * input$correction_time) / 60 / 5 / working_days, digits = 0)
 
     logger_total_cost = input$fuel_logger_cost * count_of_loggers
     dto_total_cost = input$data_entry_emp * count_of_dataEntry
@@ -93,10 +100,10 @@ server <- function(input, output) {
         "Fuel Dispatch Coordinator"
       ),
       Cost = c(
-        values()$logger_total_cost,
-        values()$dto_total_cost,
-        values()$accountant_total_cost,
-        values()$dipatcher_total_cost
+        (values()$logger_total_cost),
+        (values()$dto_total_cost),
+        (values()$accountant_total_cost),
+        (values()$dipatcher_total_cost)
       ),
       Saved = c(
         saving_logger,
@@ -159,6 +166,27 @@ server <- function(input, output) {
       annual_movable_sum = annual_movable_sum
     )
   })
+
+  format_indian <- function(x) {
+    format_single <- function(y) {
+      y <- as.character(y)
+      n <- nchar(y)
+      if (n > 3) {
+        last3 <- substr(y, n-2, n)
+        other <- substr(y, 1, n-3)
+        result <- paste0(gsub("(\\d)(?=(\\d{2})+$)", "\\1,", other, perl=TRUE), ",", last3)
+      } else {
+        result <- y
+      }
+      return(result)
+    }
+
+    if (is.vector(x)) {
+      sapply(x, format_single)
+    } else {
+      format_single(x)
+    }
+  }
 
   # ********************************************
   # ********************************************
@@ -237,12 +265,14 @@ server <- function(input, output) {
         "Fuel Dispatch Coordinator"
         ),
       Cost = c(
-        values()$logger_total_cost,
-        values()$dto_total_cost,
-        values()$accountant_total_cost,
-        values()$dipatcher_total_cost
+        format_indian(values()$logger_total_cost),
+        format_indian(values()$dto_total_cost),
+        format_indian(values()$accountant_total_cost),
+        format_indian(values()$dipatcher_total_cost)
         )
     )
+
+    colnames(field_data) <- c("FTE","Cost (₹)")
 
     return (field_data)
   })
@@ -252,11 +282,15 @@ server <- function(input, output) {
     data <- data.frame(cost.df()$Titles, cost.df()$Cost, cost.df()$Saved)
     colnames(data) <- c("Category","Metrics","saved_value")
 
+    middle_pos = cost.df()$Saved/2
+
     gg <- ggplot(data) +
       geom_bar(aes(x = Category, y = Metrics, fill="original"), stat = "identity", position="dodge") +
       geom_bar(aes(x = Category, y = saved_value, fill="saved"), stat = "identity", position="dodge") +
+      geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 3.5) +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
-      labs(fill = "Saving Comparisions")
+      labs(fill = "Saving Comparisions") +
+      theme_void()
 
     # Convert ggplot object to plotly for interactive plots
     p_plotly <- ggplotly(gg, tooltip = c("x", "y"))
@@ -286,7 +320,7 @@ server <- function(input, output) {
     })
 
   output$annual_fuel_consump <- renderText({
-    pilferage_values()$annual_consump_vol
+    format_indian(pilferage_values()$annual_consump_vol)
   })
 
   output$refuels_per_month <- renderText({
@@ -350,6 +384,7 @@ server <- function(input, output) {
     p <- ggplot(data) +
       geom_bar(aes(x=Category, y=original, fill="original_col"),stat = "identity",position = "dodge") +
       geom_bar(aes(x=Category, y=saved, fill="saved_col"),stat = "identity",position = "dodge") +
+      geom_text(aes(x=Category, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5) +
       scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
       labs(fill = "Saving Comparisions")
 
@@ -390,35 +425,28 @@ server <- function(input, output) {
       value3 = c(travelling_data()$movable_time_spent * input$movable_hemm_price)
     )
 
-    colnames(data)[2:4] <- c("Annual Refuel Count", "Overall Time Spent","Cost of Time")
+    colnames(data)[2:4] <- c("Annual Refuel Count", "Overall Time Spent", "Cost of Time")
 
     # Reshape data for ggplot
-    data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent","Cost of Time"), names_to = "variable", values_to = "value")
+    data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent", "Cost of Time"), names_to = "variable", values_to = "value")
+
+    # Format the values with the format_indian function
+    data_long$formatted_value <- format_indian(data_long$value)
 
     # Plot using ggplot
-    # gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
-    #   geom_bar(stat = "identity", position = "dodge") +
-    #   scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
-    #   labs(title = "",
-    #        x = "Category", y = "Value") +
-    #   theme_minimal()
-
     gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
       geom_bar(stat = "identity", position = "dodge") +
-      scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange","Cost of Time" = "green")) + # Assign colors
+      geom_text(aes(label = formatted_value), position = position_dodge(width = 1), vjust = 0) +
+      scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange", "Cost of Time" = "green")) + # Assign colors
       labs(title = "",
            x = "Movement Statistics", y = "Value") +
       theme_minimal() +
       scale_y_continuous(trans = "log10")
 
-    # ggplotly(gg, originalData = TRUE) %>%
-    #   style(hoverinfo = "text",
-    #         text = paste("Variable: ", data_long$Category, "<br>Value: ", 10^data_long$Value))
-
-
     # Convert ggplot to plotly
     ggplotly(gg)
   })
+
   output$movale_money_loss_hours <- renderText({
     travelling_data()$movable_time_spent * input$movable_hemm_price
   })
@@ -443,23 +471,28 @@ server <- function(input, output) {
     # movement sum
     mv_sum = travelling_data()$annual_movable_sum
 
-
-    x= list("Manpower", "Pilferage", "Movement","Annual SUm")
-    measure= c("relative", "relative", "relative", "total")
-    text= c("Manpower Savings", "Pilferage Savings","Movement Savings","Total Sum (₹)")
-    y= c(mp_sum,pl_sum,mv_sum,0)
-    data = data.frame(x=factor(x,levels=x),measure,text,y)
+    x = list("Manpower", "Pilferage", "Movement", "Annual Sum")
+    measure = c("relative", "relative", "relative", "total")
+    text = c("Manpower Savings", "Pilferage Savings", "Movement Savings", "Total Sum (₹)")
+    y = c(mp_sum, pl_sum, mv_sum, mp_sum + pl_sum + mv_sum)
+    labels = c(format_indian(mp_sum), format_indian(pl_sum), format_indian(mv_sum), format_indian(mp_sum + pl_sum + mv_sum))
+    data = data.frame(x = factor(x, levels = x), measure, text, y, labels)
 
     fig <- plot_ly(
       data, name = "Savings", type = "waterfall", measure = ~measure,
-      x = ~x, textposition = "outside", y= ~y, text =~text,
-      connector = list(line = list(color= "rgb(63, 63, 63)")))
+      x = ~x, y = ~y, text = ~labels, textposition = "outside",
+      hoverinfo = "text", texttemplate = ~labels,
+      connector = list(line = list(color = "rgb(63, 63, 63)"))
+    )
+
     fig <- fig %>%
-      layout(title = "Overall Annual Savings across 3 Domains",
-             xaxis = list(title = "Domains"),
-             yaxis = list(title = "Metrics"),
-             autosize = TRUE,
-             showlegend = TRUE)
+      layout(
+        title = "Overall Annual Savings across 3 Domains Yearly(₹)",
+        xaxis = list(title = "Domains"),
+        yaxis = list(title = "Metrics"),
+        autosize = TRUE,
+        showlegend = TRUE
+      )
 
     fig
   })
