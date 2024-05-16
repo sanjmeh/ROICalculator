@@ -16,19 +16,19 @@ ui <- shinyUI(fluidPage(
                   numericInput("shift_count","Number of shifts",value = 2)
                   ),
            column(width=2,
-                  numericInput("hemm_count","Number of HEMM",value=0)
+                  numericInput("hemm_count","Number of HEMM",value=100)
            ),
            column(width=2,
                   numericInput("truck_count","Number of diesel bowsers/site",value = 7,min=0,max=10),
            ),
            column(width=2,
-                  numericInput("hemm_daily_consump","HEMM Fuel Consumption/Day",value=0)
+                  numericInput("hemm_daily_consump","HEMM Fuel Consumption/Day",value=100)
            ),
            column(width=2,
                   numericInput("sfs_count","Number of Fuel Stations",value=2),
            ),
            column(width=2,
-                  numericInput("fuel_entry_count", "Number of refuels-entries/day:",value = 200),
+                  numericInput("fuel_entry_count", "Number of refuels-entries/all Hemm/day:",value = 200),
                   )
   ),
 
@@ -47,6 +47,7 @@ ui <- shinyUI(fluidPage(
                           br(),
                           h5("Entries per year: (entries/day * 365)"),
                           verbatimTextOutput("entries_per_year",TRUE),
+                          numericInput("error_margin","Enter % of erroneous entries",value=5),
                           br(),
                           # h6("Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction."),
                           # h6("5 mins per entry ~ 3 mins for entry and 2 mins for correction"),
@@ -65,23 +66,28 @@ ui <- shinyUI(fluidPage(
                           sliderInput("accountant_cost","Avg cost of accountant FTE: ",value=300000,min=100000,max=800000),
                         ),
                         mainPanel(
-                          fluidRow(
-                            splitLayout(
-                              tableOutput("manpower_data"),
-                              tableOutput("manpower_data_2")
-                            )
-                          ),
-                          fluidRow(
-                            plotlyOutput("histogram"),
-                          ),
-                          fluidRow(
-                            column(3,numericInput("manpower_save_accounts","% Saving in Accountants",value=5)),
-                            column(3,numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5)),
-                            column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
-                            column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
-                          ),
-                          fluidRow(
-                            column(6,
+                          fluidPage(
+                            column(8,
+                                   fluidRow(
+                                     splitLayout(
+                                       tableOutput("manpower_data"),
+                                       tableOutput("manpower_data_2")
+                                     )
+                                   ),
+                                   fluidRow(
+                                     plotlyOutput("histogram"),
+                                   ),
+                                   fluidRow(
+                                     column(3,numericInput("manpower_save_accounts","% Saving in Accountants",value=5)),
+                                     column(3,numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5)),
+                                     column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
+                                     column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
+                                   ),
+                                   fluidRow(
+                                     plotOutput("pieChart")
+                                   ),
+                            ),
+                            column(4,
                                    h3("Assumptions"),
                                    p("For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators."),
                                    br(),
@@ -89,8 +95,8 @@ ui <- shinyUI(fluidPage(
                                    p("Data Aggregator/Compiler FTE: is estimated at 5 LPA * number of compilers required to meet requirements in a year."),
                                    br(),
                                    br(),
-                                   p("Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated")),
-                            column(6,plotOutput("pieChart"))
+                                   p("Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated")
+                                   ),
                           )
                         )
                       )
@@ -110,11 +116,13 @@ ui <- shinyUI(fluidPage(
                                  ),
                                  fluidRow(
                                    column(width=6,
-                                          h4("Average Fuel Consumption/Year:"),
-                                          actionButton("annualf_consump_info", "Info",
-                                                       icon("lightbulb"),
-                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                          verbatimTextOutput("annual_fuel_consump")
+                                          fluidRow(column(10,h4("Average Fuel Consumption/Year: (litres)")),
+                                                   column(2,actionButton("annualf_consump_info", "Info",
+                                                                         icon("lightbulb"),
+                                                                         style="color: #fff; background-color: #008000; border-color: #2e6da4")
+                                                          )
+                                                   ),
+                                          fluidRow(verbatimTextOutput("annual_fuel_consump"))
                                    ),
                                    column(width=3,
                                           h4("Refuellings/HEMM/month"),
@@ -186,7 +194,7 @@ ui <- shinyUI(fluidPage(
                  ),
                  fluidRow(
                    column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),
-                   column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=0)),
+                   column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=20)),
                    column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
                    column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
 
@@ -216,7 +224,15 @@ ui <- shinyUI(fluidPage(
                fluidPage(
                 h1("Overall Summary"),
                 plotlyOutput("summary_waterfall")
-               ))
+               )
+      ),
+      tabPanel("Corner-Stone Values",
+               fluidPage(
+                 fluidRow(
+                   numericInput("correction_time","Time taken for erroneous entry correction",value=10)
+                 )
+               )
       )
+      ),
   )
 )
