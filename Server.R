@@ -2,6 +2,7 @@ library(shiny)
 library(DT)
 library(ggplot2)
 library(plotly)
+library(stringr)
 library(scales)
 
 server <- function(input, output) {
@@ -71,6 +72,9 @@ server <- function(input, output) {
     ref_per_month = round(ref_per_month,0)
     ref_per_year = round(ref_per_month * 12,digits=0)
 
+    idle_assumed_consump = (input$idle_loaded_lph*(input$idle_assumed_loaded/100) + input$idle_on_lph*(input$idle_assumed_on /100) + 0*(input$idle_off/100))/1
+    idle_actual_consump = (input$idle_loaded_lph*(input$idle_disc_loaded/100) + input$idle_on_lph*(input$idle_disc_on/100) + 0*(input$idle_off/100))/1
+
     data.frame(
       ur_daily_vol = ur_daily_vol,
       under_reporting_yearly =  under_reporting_yearly,
@@ -82,7 +86,11 @@ server <- function(input, output) {
 
       vol_saved_yearly = vol_saved_yearly,
       saving_ftheft = saving_ftheft,
-      saving_ur = saving_ur
+      saving_ur = saving_ur,
+
+      idle_assumed_consump = idle_assumed_consump,
+      idle_actual_consump = idle_actual_consump
+
     )
   })
 
@@ -194,11 +202,11 @@ server <- function(input, output) {
   # ********************************************
 
 
-# MANPOWER MENU BAR
+  # MANPOWER MENU BAR
 
   observeEvent(input$dto_count_info, {
     shinyalert("Count of Data Entry Operators:", "Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction.\n
-               5 mins per entry ~ 3 mins for entry and 2 mins for correction\n
+               3 mins for entry and extra mins for erroneous entry\n
                Assuming working hours productivity to be 5hrs/8hrs\n
                (entries_per_year * 5) / 60 / 5 : number of working days\n
                number of working days / actual working days/year = number of Data Entry Operators", type = "info")
@@ -235,13 +243,13 @@ server <- function(input, output) {
               "Count of Data Entry Operators",
               "Count of Accountants",
               "Count of Fuel Dispatchers"
-                ),
+      ),
       Value = c(
         values()$count_of_loggers,
         values()$count_of_dataEntry,
         input$accountant_count,
         input$coordinator_count
-        )
+      )
     )
 
     return (field_data)
@@ -263,13 +271,13 @@ server <- function(input, output) {
         "Data Entry Operator",
         "Accountant/Compiler",
         "Fuel Dispatch Coordinator"
-        ),
+      ),
       Cost = c(
         format_indian(values()$logger_total_cost),
         format_indian(values()$dto_total_cost),
         format_indian(values()$accountant_total_cost),
         format_indian(values()$dipatcher_total_cost)
-        )
+      )
     )
 
     colnames(field_data) <- c("FTE","Cost (₹)")
@@ -313,11 +321,11 @@ server <- function(input, output) {
   # PILFERAGE
 
   observeEvent(input$annualf_consump_info,{
-                shinyalert("Annual Fuel Consumption Calculation","Case1: If Hemm count and Hemm consumption is specified:\n
+    shinyalert("Annual Fuel Consumption Calculation","Case1: If Hemm count and Hemm consumption is specified:\n
                            HEMM daily consumption * count of HEMM * 365 days\n
                            Case2: If HEMM info not specified:\n
                            Each bowser assumed to fuel 65 HEMMs having 70lt daily consumption * 365 days",type="info")
-    })
+  })
 
   output$annual_fuel_consump <- renderText({
     format_indian(pilferage_values()$annual_consump_vol)
@@ -367,7 +375,7 @@ server <- function(input, output) {
     original_value <- c(
       pilferage_values()$under_reporting_yearly,
       pilferage_values()$bowser_fuel_sold_yearly
-      )
+    )
     saved_value <- c(
       pilferage_values()$saving_ur,
       pilferage_values()$saving_ftheft
@@ -386,7 +394,8 @@ server <- function(input, output) {
       geom_bar(aes(x=Category, y=saved, fill="saved_col"),stat = "identity",position = "dodge") +
       geom_text(aes(x=Category, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5) +
       scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
-      labs(fill = "Saving Comparisions")
+      labs(fill = "Saving Comparisions") +
+      theme(legend.position = "none")
 
 
     # Convert ggplot object to plotly for interactive plots
@@ -395,12 +404,23 @@ server <- function(input, output) {
     return(p_plotly)
   })
 
+  output$idle_table <- renderTable({
+    data <- data.frame(
+      Data = c("Assumed","Observed"),
+      On_Lph = c(input$idle_assumed_on,input$idle_disc_on),
+      Loaded_Lph = c(input$idle_assumed_loaded,input$idle_disc_loaded),
+      Consumption = c(pilferage_values()$idle_assumed_consump,pilferage_values()$idle_actual_consump)
+    )
+
+    return(data)
+  })
+
   output$pilferage_explanation <- renderText({
-    pilferage_values()$vol_saved_yearly
+    format_indian(pilferage_values()$vol_saved_yearly)
   })
 
   output$pilferage_cost <- renderText({
-    pilferage_values()$vol_saved_yearly * 86
+    format_indian(pilferage_values()$vol_saved_yearly * 86)
   })
 
 
@@ -460,10 +480,7 @@ server <- function(input, output) {
 
   output$summary_waterfall <- renderPlotly({
     # manpower sum
-    mp_sum = values()$logger_total_cost +
-      values()$dto_total_cost +
-      values()$dipatcher_total_cost +
-      values()$accountant_total_cost + 0
+    mp_sum = cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
 
     # pilferage sum
     pl_sum = pilferage_values()$vol_saved_yearly * 86

@@ -14,22 +14,22 @@ ui <- shinyUI(fluidPage(
   h2("Universal Values"),
   fluidRow(column(width=2,
                   numericInput("shift_count","Number of shifts",value = 2)
-                  ),
-           column(width=2,
-                  numericInput("hemm_count","Number of HEMM",value=100)
-           ),
-           column(width=2,
-                  numericInput("truck_count","Number of diesel bowsers/site",value = 7,min=0,max=10),
-           ),
-           column(width=2,
-                  numericInput("hemm_daily_consump","HEMM Fuel Consumption/Day",value=100)
-           ),
-           column(width=2,
-                  numericInput("sfs_count","Number of Fuel Stations",value=2),
-           ),
-           column(width=2,
-                  numericInput("fuel_entry_count", "Number of refuels-entries/all Hemm/day:",value = 200),
-                  )
+  ),
+  column(width=2,
+         numericInput("hemm_count","Number of HEMM",value=100)
+  ),
+  column(width=2,
+         numericInput("truck_count","Number of diesel bowsers/site",value = 7,min=0,max=10),
+  ),
+  column(width=2,
+         numericInput("hemm_daily_consump","HEMM Fuel Consumption/Day",value=100)
+  ),
+  column(width=2,
+         numericInput("sfs_count","Number of Fuel Stations",value=2),
+  ),
+  column(width=2,
+         numericInput("fuel_entry_count", "Number of refuels-entries/all Hemm/day:",value = 200),
+  )
   ),
 
 
@@ -38,7 +38,7 @@ ui <- shinyUI(fluidPage(
              # MANPOWER TAB
 
              tabPanel("Manpower Calculation",
-                          h1("Enter Work Parameters"),
+                      h1("Enter Work Parameters"),
                       sidebarLayout(
                         sidebarPanel(
                           numericInput("logger_count_per_bowser","Number of fuel data recorders/bowser",value=1),
@@ -96,7 +96,7 @@ ui <- shinyUI(fluidPage(
                                    br(),
                                    br(),
                                    p("Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated")
-                                   ),
+                            ),
                           )
                         )
                       )
@@ -106,23 +106,19 @@ ui <- shinyUI(fluidPage(
 
              tabPanel("Pilferage",
                       fluidPage(
-
-                        tabPanel("Consumption summary",
-                                 # Add content for the Menu tab here
-                                 fluidRow(
-                                   column(width=12,
-                                          h1("Scenarios"),
-                                   ),
-                                 ),
+                        fluidRow(
+                          column(12,
                                  fluidRow(
                                    column(width=6,
                                           fluidRow(column(10,h4("Average Fuel Consumption/Year: (litres)")),
-                                                   column(2,actionButton("annualf_consump_info", "Info",
-                                                                         icon("lightbulb"),
-                                                                         style="color: #fff; background-color: #008000; border-color: #2e6da4")
-                                                          )
-                                                   ),
-                                          fluidRow(verbatimTextOutput("annual_fuel_consump"))
+                                                   column(2,
+                                                          actionButton("annualf_consump_info", "Info",
+                                                                       icon("lightbulb"),
+                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4")
+                                                   )
+                                          ),
+                                          fluidRow(verbatimTextOutput("annual_fuel_consump")
+                                          )
                                    ),
                                    column(width=3,
                                           h4("Refuellings/HEMM/month"),
@@ -131,108 +127,160 @@ ui <- shinyUI(fluidPage(
                                           h4("Refuellings/HEMM/year"),
                                           verbatimTextOutput("refuels_per_year"))
                                  ),
+                          )
                         ),
-                        tabPanel("Consumption bifercated",
-                                 # Add content for the second tab here
-                                 fluidRow(column(width = 6,
-                                                 column(width = 6,
-                                                        fluidRow(
-                                                          h3('Under Refueling and Over Reporting'),
-                                                          # useShinyalert(),  # Set up shinyalert
-                                                          actionButton("ur_info", "Info",
-                                                                       icon("lightbulb"),
-                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                                          numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 40),
-                                                          numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 10),
-                                                        ),
-                                                        fluidRow(
-                                                          tableOutput("underreported_calculations")
-                                                        ),
-                                                        fluidRow(numericInput("pilferage_save_ur","% Savings from Over and Under reporting:",value=10))
-                                                 ),
-
-                                                 column(width = 6,
-                                                        fluidRow(
-                                                          h3('HEMM Fuel Tank Theft'),
-                                                          actionButton("theft_info","Info",
-                                                                       icon("lightbulb"),
-                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                                          numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=40),
-                                                          numericInput("bowser_theft_vol", "How many litres of fuel do you think is stolen each instance?", value = 1000),
-                                                          br()
-                                                        ),
-                                                        fluidRow(
-                                                          tableOutput("stolen_assumption")
-                                                        ),
-                                                        fluidRow(numericInput("pilferage_save_theft","% Savings from HEMM Tank Theft:",value=10))
-                                                 )
-                                                 ),
-                                          column(width = 6,
-                                                 plotlyOutput("pilferage_hist")
-                                                 )
+                        fluidRow(
+                          column(width = 9,
+                                 column(width = 4,
+                                        fluidRow(
+                                          h3('Under Refueling and Over Reporting'),
+                                          # useShinyalert(),  # Set up shinyalert
+                                          actionButton("ur_info", "Info",
+                                                       icon("lightbulb"),
+                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
+                                          numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 40),
+                                          numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 10),
+                                        ),
+                                        fluidRow(
+                                          tableOutput("underreported_calculations")
+                                        ),
+                                        fluidRow(
+                                          numericInput("pilferage_save_ur","% Savings from Over and Under reporting:",value=10)
+                                        )
+                                 ),
+                                 column(width = 4,
+                                        fluidRow(
+                                          h3('HEMM Fuel Tank Theft'),
+                                          actionButton("theft_info","Info",
+                                                       icon("lightbulb"),
+                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
+                                          numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=40),
+                                          numericInput("bowser_theft_vol", "How many litres of fuel do you think is stolen each instance?", value = 1000),
+                                        ),
+                                        fluidRow(
+                                          tableOutput("stolen_assumption")
+                                        ),
+                                        fluidRow(numericInput("pilferage_save_theft","% Savings from HEMM Tank Theft:",value=10)
+                                        )
+                                 ),
+                                 column(width = 4,
+                                        fluidRow(
+                                          h3('IDLE Time Loss'),
+                                          actionButton("idle_info","Info",
+                                                       icon("lightbulb"),
+                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
+                                          numericInput("idle_on_lph","Idle ON Lires/Hr",value=8),
+                                          fluidRow(
+                                            column(6,
+                                                   numericInput("idle_assumed_on","% Assumed Data Cycle",value=30)
+                                            ),
+                                            column(6,
+                                                   numericInput("idle_disc_on","% Discovered Data Cycle",value=40)
+                                            )
+                                          ),
+                                          numericInput("idle_loaded_lph","Idle Loaded Lires/Hr",value=8),
+                                          fluidRow(
+                                            column(6,
+                                                   numericInput("idle_assumed_loaded", "% Assumed Data Cycle", value = 50)
+                                            ),
+                                            column(6,
+                                                   numericInput("idle_disc_loaded", "% Discovered Data Cycle", value = 40)
+                                            )
+                                          )
+                                        )
+                                        # fluidRow(
+                                        #   tableOutput("idle_calculations")
+                                        # ),
+                                        # fluidRow(numericInput("idle_save_theft","% Savings IDLE monitoring:",value=10))
+                                 )
+                          ),
+                          column(width = 3,
+                                 fluidRow(plotlyOutput("pilferage_hist")),
+                                 br(),
+                                 fluidRow(tableOutput("idle_table"))
+                          )
+                          # column(width=1,
+                          #        h1("video space"))
+                          # )
                         ),
-                        mainPanel(fluidRow(h1("Overall Savings"),
-                                           column(width=6,h3("Litres of savings in fuel"),
-                                                  verbatimTextOutput("pilferage_explanation")),
-                                           column(width=6,h3("Accounts for:"),
-                                                  verbatimTextOutput("pilferage_cost"))
-                                           )
+                        fluidRow(h1("Overall Savings"),
+                                 column(width=6,h3("Litres of savings in fuel"),
+                                        verbatimTextOutput("pilferage_explanation")),
+                                 column(width=6,h3("Accounts for:"),
+                                        verbatimTextOutput("pilferage_cost"))
                         )
                       )
-              )
-      ),
+             ),
 
-      # MOVEMENT TAB
+             # MOVEMENT TAB
 
-      tabPanel("Movement Statistics",
-               fluidPage(
-                 fluidRow(
-                   column(6,h1("Movable Vehicle Summary/HEMM")),
-                   column(6,fluidRow(
-                     h4("Refuels/HEMM//month"),
-                     verbatimTextOutput("ref_per_month")))
-                 ),
-                 fluidRow(
-                   column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),
-                   column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=20)),
-                   column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
-                   column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
+             tabPanel("Movement Statistics",
+                      fluidPage(
+                        fluidRow(
+                          column(6,h1("Movable Vehicle Summary/HEMM")),
+                          column(6,fluidRow(
+                            h4("Refuels/HEMM//month"),
+                            verbatimTextOutput("ref_per_month")))
+                        ),
+                        fluidRow(
+                          column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),
+                          column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=20)),
+                          column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
+                          column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
 
-                 ),
-                 fluidRow(column(width=6,
-                                 plotlyOutput("movable_visualisation")),
-                          fluidRow(column(width=3,
-                                          h3("Number of refuels/annually"),
-                                          verbatimTextOutput("movable_refuel_sumannual")),
-                                   column(width=3,
-                                          h3("Total self refeulling time"),
-                                          verbatimTextOutput("movable_time_spent")),
-                                   fluidRow(
-                                     column(width=5,
-                                            h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for single heavy machinery"),
-                                            verbatimTextOutput("movale_money_loss_hours")),
-                                     column(width=5,
-                                            h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for all heavy machinery"),
-                                            verbatimTextOutput("movale_annual_money_loss_hours"))
-                                     )
-                                     )
-                          ),
-                 )
-               ),
+                        ),
+                        fluidRow(column(width=6,
+                                        plotlyOutput("movable_visualisation")),
+                                 fluidRow(column(width=3,
+                                                 h3("Number of refuels/annually"),
+                                                 verbatimTextOutput("movable_refuel_sumannual")),
+                                          column(width=3,
+                                                 h3("Total self refeulling time"),
+                                                 verbatimTextOutput("movable_time_spent")),
+                                          fluidRow(
+                                            column(width=5,
+                                                   h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for single heavy machinery"),
+                                                   verbatimTextOutput("movale_money_loss_hours")),
+                                            column(width=5,
+                                                   h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for all heavy machinery"),
+                                                   verbatimTextOutput("movale_annual_money_loss_hours"))
+                                          )
+                                 )
+                        ),
+                      )
+             ),
 
-      tabPanel("Summary",
-               fluidPage(
-                h1("Overall Summary"),
-                plotlyOutput("summary_waterfall")
-               )
-      ),
-      tabPanel("Corner-Stone Values",
-               fluidPage(
-                 fluidRow(
-                   numericInput("correction_time","Time taken for erroneous entry correction",value=10)
-                 )
-               )
-      )
-      ),
+             tabPanel("Summary",
+                      fluidPage(
+                        h1("Overall Summary"),
+                        plotlyOutput("summary_waterfall"),
+                        br(),
+                        h4("Description"),
+                        h5("This waterfall chart illustrates the total savings achieved across three key domains: manpower, pilferage, and movement. Each segment of the chart represents the individual contributions of these domains to the overall savings. The cumulative effect is shown by sequentially adding the savings from each domain, culminating in the final bar that presents the total savings amount. This visual representation allows for a clear and concise understanding of the impact each domain has on our cost-saving initiatives, highlighting the areas with the most significant contributions.")
+                      )
+             ),
+             tabPanel("Corner-Stone Values",
+                      fluidPage(
+                        fluidRow(column(4,
+                                        fluidRow(
+                                          h3("Manpower Section"),
+                                          numericInput("correction_time","Time taken for erroneous entry correction",value=10)
+                                        )
+                        ),
+                        column(4,
+                               fluidRow(
+                                 h3("Pilferage Section"),
+                                 numericInput("idle_off","Off duty cycle",value=20)
+                               )
+                        ),
+                        column(4,
+                               fluidRow(
+                                 h3("Movement Section"),
+                                 p("add assumptions here")
+                               ))
+                        )
+                      )
+             ),
   )
+)
 )
