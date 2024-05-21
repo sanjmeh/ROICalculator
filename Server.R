@@ -455,7 +455,7 @@ server <- function(input, output, session) {
 
     mod_idle_hours_consump = input$idle_mod_on_val * input$idle_on_lph
 
-    idle_mod_consump_lpd = idling_ldp - mod_idle_hours_consump
+    idle_mod_consump_lpd = idling_ldp - idle_idling_working_hours * input$idle_on_lph + mod_idle_hours_consump
     idle_mod_all_consump_lpd = idle_mod_consump_lpd * input$hemm_count
 
     data.frame(
@@ -491,7 +491,7 @@ server <- function(input, output, session) {
     }
   })
 
-  # Current State Percentage input check to prevent unexpected crashes
+  # Current State Percentage input check to prevent unexpected
   observe({
     # Idling and Loading Percentage Check:
 
