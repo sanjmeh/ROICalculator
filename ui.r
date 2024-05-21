@@ -130,8 +130,8 @@ ui <- shinyUI(fluidPage(
                           )
                         ),
                         fluidRow(
-                          column(width = 9,
-                                 column(width = 4,
+                          column(width = 6,
+                                 column(width = 6,
                                         fluidRow(
                                           h3('Under Refueling and Over Reporting'),
                                           # useShinyalert(),  # Set up shinyalert
@@ -148,7 +148,7 @@ ui <- shinyUI(fluidPage(
                                           numericInput("pilferage_save_ur","% Savings from Over and Under reporting:",value=10)
                                         )
                                  ),
-                                 column(width = 4,
+                                 column(width = 6,
                                         fluidRow(
                                           h3('HEMM Fuel Tank Theft'),
                                           actionButton("theft_info","Info",
@@ -162,44 +162,11 @@ ui <- shinyUI(fluidPage(
                                         ),
                                         fluidRow(numericInput("pilferage_save_theft","% Savings from HEMM Tank Theft:",value=10)
                                         )
-                                 ),
-                                 column(width = 4,
-                                        # fluidRow(
-                                        #   h3('IDLE Time Loss'),
-                                        #   actionButton("idle_info","Info",
-                                        #                icon("lightbulb"),
-                                        #                style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                        #   numericInput("idle_on_lph","Idle ON Lires/Hr",value=8),
-                                        #   fluidRow(
-                                        #     column(6,
-                                        #            numericInput("idle_assumed_on","% Assumed Data Cycle",value=30)
-                                        #     ),
-                                        #     column(6,
-                                        #            numericInput("idle_disc_on","% Discovered Data Cycle",value=40)
-                                        #     )
-                                        #   ),
-                                        #   numericInput("idle_loaded_lph","Idle Loaded Lires/Hr",value=8),
-                                        #   fluidRow(
-                                        #     column(6,
-                                        #            numericInput("idle_assumed_loaded", "% Assumed Data Cycle", value = 50)
-                                        #     ),
-                                        #     column(6,
-                                        #            numericInput("idle_disc_loaded", "% Discovered Data Cycle", value = 40)
-                                        #     )
-                                        #   )
-                                        # )
-
-                                        # fluidRow(
-                                        #   tableOutput("idle_calculations")
-                                        # ),
-                                        # fluidRow(numericInput("idle_save_theft","% Savings IDLE monitoring:",value=10))
                                  )
                           ),
-                          column(width = 3,
-                                 fluidRow(plotlyOutput("pilferage_hist")),
-                                 br(),
-                                 fluidRow(tableOutput("idle_table"))
-                          )
+                          column(width = 4,
+                                 fluidRow(plotlyOutput("pilferage_hist"))),
+                          column(2,h4("Explanation of scenarios:"))
                           # column(width=1,
                           #        h1("video space"))
                           # )

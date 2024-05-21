@@ -72,9 +72,6 @@ server <- function(input, output, session) {
     ref_per_month = round(ref_per_month,0)
     ref_per_year = round(ref_per_month * 12,digits=0)
 
-    idle_assumed_consump = (input$idle_loaded_lph*(input$idle_assumed_loaded/100) + input$idle_on_lph*(input$idle_assumed_on /100) + 0*(input$idle_off/100))/1
-    idle_actual_consump = (input$idle_loaded_lph*(input$idle_disc_loaded/100) + input$idle_on_lph*(input$idle_disc_on/100) + 0*(input$idle_off/100))/1
-
     data.frame(
       ur_daily_vol = ur_daily_vol,
       under_reporting_yearly =  under_reporting_yearly,
@@ -86,11 +83,7 @@ server <- function(input, output, session) {
 
       vol_saved_yearly = vol_saved_yearly,
       saving_ftheft = saving_ftheft,
-      saving_ur = saving_ur,
-
-      idle_assumed_consump = idle_assumed_consump,
-      idle_actual_consump = idle_actual_consump
-
+      saving_ur = saving_ur
     )
   })
 
@@ -406,17 +399,6 @@ server <- function(input, output, session) {
     p_plotly <- ggplotly(p, tooltip = c("x", "y"))
 
     return(p_plotly)
-  })
-
-  output$idle_table <- renderTable({
-    data <- data.frame(
-      Data = c("Assumed","Observed"),
-      On_Lph = c(input$idle_assumed_on,input$idle_disc_on),
-      Loaded_Lph = c(input$idle_assumed_loaded,input$idle_disc_loaded),
-      Consumption = c(pilferage_values()$idle_assumed_consump,pilferage_values()$idle_actual_consump)
-    )
-
-    return(data)
   })
 
   output$pilferage_explanation <- renderText({
