@@ -426,6 +426,11 @@ server <- function(input, output, session) {
   # IDLING Tab
 
   idle_total <- reactive({
+    #checking input to prevent crashes
+    req(!is.null(input$idle_load_perc), input$idle_load_perc != 0)
+    req(!is.null(input$idle_on_perc), input$idle_on_perc != 0)
+
+
     on_load_sum = sum(c(input$idle_load_perc, input$idle_on_perc))
     off_perc = 100 - on_load_sum
     total_perc = on_load_sum + off_perc
@@ -449,6 +454,7 @@ server <- function(input, output, session) {
       on_load_sum = on_load_sum,
       off_perc = off_perc,
 
+      working_hours = working_hours,
       idle_idling_working_hours = idle_idling_working_hours,
       idle_loading_working_hours = idle_loading_working_hours,
       idle_off_working_hours = idle_off_working_hours,
@@ -460,15 +466,20 @@ server <- function(input, output, session) {
     )
   })
 ####################FIX THIS SUM TO 100 ERROR
-  # observe({
-  #   if (total()$total_perc == 100) {
-  #     updateTextInput(session, "idle_load_perc", label = "% Time Loaded State")
-  #     updateTextInput(session, "idle_on_perc", label = "% Time Idling State")
-  #   } else {
-  #     updateTextInput(session, "idle_load_perc", label = "Please enter a correct value")
-  #     updateTextInput(session, "idle_on_perc", label = "Please enter a correct value")
-  #   }
-  # })
+  observe({
+    on_load_sum <- idle_total()$on_load_sum
+
+    # idle+load+offtime = working_hours
+    # idle_perc + load_perc + offTtime_perc = 100 perc
+    # offTime perc (has to be +ve) = 100 - idle_perc - load_perc
+    if (100 - on_load_sum > 0) {
+      updateTextInput(session, "idle_load_perc", label = "% Time Loaded State")
+      updateTextInput(session, "idle_on_perc", label = "% Time Idling State")
+    } else {
+      updateTextInput(session, "idle_load_perc", value = 50)
+      updateTextInput(session, "idle_on_perc", value = 30)
+    }
+  })
 
   output$idle_off_perc <- renderText({
     idle_total()$off_perc
