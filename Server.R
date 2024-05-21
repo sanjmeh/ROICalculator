@@ -196,6 +196,12 @@ server <- function(input, output, session) {
     }
   }
 
+  updateTextOutput <- function(outputId, newText) {
+    output[[outputId]] <- renderText({
+      newText
+    })
+  }
+
   # ********************************************
   # ********************************************
   # ********************************************
@@ -429,6 +435,8 @@ server <- function(input, output, session) {
     #checking input to prevent crashes
     req(!is.null(input$idle_load_perc), input$idle_load_perc != 0)
     req(!is.null(input$idle_on_perc), input$idle_on_perc != 0)
+    # req(!is.null(input$idle_mod_off_val), input$idle_mod_off_val != 0)
+    req(!is.null(input$idle_mod_on_val), input$idle_mod_on_val != 0)
 
 
     on_load_sum = sum(c(input$idle_load_perc, input$idle_on_perc))
@@ -465,8 +473,28 @@ server <- function(input, output, session) {
       idle_mod_all_consump_lpd = idle_mod_all_consump_lpd
     )
   })
-####################FIX THIS SUM TO 100 ERROR
+
+
+  # New Hours input check and dynamic update
+  observeEvent(input$idle_mod_on_val, {
+    updated_val = idle_total()$working_hours - input$idle_mod_on_val - idle_total()$idle_loading_working_hours
+
+    original_sum <- idle_total()$idle_off_working_hours + idle_total()$idle_idling_working_hours
+    new_sum <- input$idle_mod_on_val + updated_val
+
+    # check for: 1.sum of old and new value stays same 2.neither value gets to 0
+    if(original_sum != new_sum || updated_val == 0 || input$idle_mod_on_val == 0){
+      updated_val = idle_total()$idle_off_working_hours
+      updateNumericInput(session, "idle_mod_on_val", value = idle_total()$idle_idling_working_hours)
+    } else {
+      updateTextOutput("idle_mod_off_val", updated_val)
+    }
+  })
+
+  # Current State Percentage input check to prevent unexpected crashes
   observe({
+    # Idling and Loading Percentage Check:
+
     on_load_sum <- idle_total()$on_load_sum
 
     # idle+load+offtime = working_hours
@@ -479,7 +507,9 @@ server <- function(input, output, session) {
       updateTextInput(session, "idle_load_perc", value = 50)
       updateTextInput(session, "idle_on_perc", value = 30)
     }
+
   })
+
 
   output$idle_off_perc <- renderText({
     idle_total()$off_perc
