@@ -605,20 +605,30 @@ server <- function(input, output, session) {
 
   output$summary_waterfall <- renderPlotly({
     # manpower sum
-    mp_sum = cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
+    mp_sum <- cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
 
     # pilferage sum
-    pl_sum = pilferage_values()$vol_saved_yearly * 86
+    pl_sum <- pilferage_values()$vol_saved_yearly * 86
 
     # movement sum
-    mv_sum = travelling_data()$annual_movable_sum
+    mv_sum <- travelling_data()$annual_movable_sum
 
-    x = list("Manpower", "Pilferage", "Movement", "Annual Sum")
-    measure = c("relative", "relative", "relative", "total")
-    text = c("Manpower Savings", "Pilferage Savings", "Movement Savings", "Total Sum (₹)")
-    y = c(mp_sum, pl_sum, mv_sum, mp_sum + pl_sum + mv_sum)
-    labels = c(format_indian(mp_sum), format_indian(pl_sum), format_indian(mv_sum), format_indian(mp_sum + pl_sum + mv_sum))
-    data = data.frame(x = factor(x, levels = x), measure, text, y, labels)
+    #idling sum
+    idle_sum <- (idle_total()$idling_all_ldp - idle_total()$idle_mod_all_consump_lpd)*365*86
+
+    x <- list("Manpower", "Pilferage", "Movement", "Idling", "Annual Sum")
+    measure <- c("relative", "relative", "relative", "relative", "total")
+    text <- c("Manpower Savings", "Pilferage Savings", "Movement Savings", "Idling Savings", "Total Sum (₹)")
+    y <- c(mp_sum, pl_sum, mv_sum, idle_sum, mp_sum + pl_sum + mv_sum + idle_sum)
+    labels <- c(format_indian(mp_sum), format_indian(pl_sum), format_indian(mv_sum), format_indian(idle_sum), format_indian(mp_sum + pl_sum + mv_sum + idle_sum))
+
+    data <- data.frame(
+      x = factor(x, levels = x),
+      measure = measure,
+      text = text,
+      y = y,
+      labels = labels
+    )
 
     fig <- plot_ly(
       data, name = "Savings", type = "waterfall", measure = ~measure,
@@ -629,7 +639,7 @@ server <- function(input, output, session) {
 
     fig <- fig %>%
       layout(
-        title = "Overall Annual Savings across 3 Domains Yearly(₹)",
+        title = "Overall Annual Savings across 4 Domains Yearly(₹)",
         xaxis = list(title = "Domains"),
         yaxis = list(title = "Metrics"),
         autosize = TRUE,
