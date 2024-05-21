@@ -247,8 +247,8 @@ ui <- shinyUI(fluidPage(
                                                                   h4("Current Consumption:"))),
                                                   fluidRow(column(12,
                                                                   h5("Litres Consumed/Day/All HEMM (Litres)"),
-                                                                  verbatimTextOutput("idle_all_consump_lpd"))
-                                                           )
+                                                                  verbatimTextOutput("idle_all_consump_lpd"))),
+                                                  fluidRow(column(12,h4("A possible scenario to increase savings:"),p("Monitoring of off and idling hours can help instruct the reponsible to reduce idling by increasing off time of the machinery resulting in fuel savings.")))
                                                   )
                                                 ),
                                          column(6,
@@ -263,9 +263,14 @@ ui <- shinyUI(fluidPage(
                                                   fluidRow(column(12,
                                                                   h5("Litres Consumed/Day/All HEMM (Litres)"),
                                                                   verbatimTextOutput("idle_mod_all_consump_lpd"))),
-                                                  fluidRow(h5("difference in /day fuel consumption/hemm"),verbatimTextOutput("idle_lpd_diff")),
-                                                  fluidRow(h5("% difference")) # or maybe a plot differnece
-                                                )
+                                                  fluidRow(column(6,
+                                                                  h5("Consumption Difference (Litres/Day/HEMM)"),
+                                                                  verbatimTextOutput("idle_lpd_diff")),
+                                                           column(6,
+                                                                  h5("% Difference"),
+                                                                  verbatimTextOutput("idle_lpd_diff_perc"))),
+                                                  fluidRow(column(12,plotlyOutput("idling_plot")))
+                                                  )
                                          ))
                       ),
 

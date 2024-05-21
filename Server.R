@@ -498,7 +498,32 @@ server <- function(input, output, session) {
     format_indian(idle_total()$idle_mod_all_consump_lpd)
   })
 
+  output$idle_lpd_diff <- renderText({
+    idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd
+  })
+  output$idle_lpd_diff_perc <- renderText({
+    perc_val = (idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd)/idle_total()$idling_ldp
+    perc_val = perc_val * 100
+    return(perc_val)
+  })
 
+  output$idling_plot <- renderPlotly({
+    data = data.frame(
+      title = c("Daily Consumption/HEMM"),
+      original = c(idle_total()$idling_ldp),
+      saved = c(idle_total()$idle_mod_consump_lpd)
+    )
+
+    gg <- ggplot(data)+
+      geom_bar(aes(x=title,y=original,fill="original_col"),stat="identity",position = "dodge")+
+      geom_bar(aes(x=title,y=saved, fill="saved_col"),stat="identity",position="dodge")+
+      geom_text(aes(x=title, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5)+
+      scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
+      labs(fill = "Saving Comparisions") +
+      theme(legend.position = "none")
+
+    return(gg)
+  })
 
 
 
