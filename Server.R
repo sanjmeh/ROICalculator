@@ -5,7 +5,7 @@ library(plotly)
 library(stringr)
 library(scales)
 
-server <- function(input, output) {
+server <- function(input, output, session) {
 
   # Values relevant across all calculations put in a reactive for easier access
 
@@ -316,8 +316,6 @@ server <- function(input, output) {
 
 
 
-
-
   # PILFERAGE
 
   observeEvent(input$annualf_consump_info,{
@@ -422,6 +420,85 @@ server <- function(input, output) {
   output$pilferage_cost <- renderText({
     format_indian(pilferage_values()$vol_saved_yearly * 86)
   })
+
+
+
+  # IDLING Tab
+
+  idle_total <- reactive({
+    on_load_sum = sum(c(input$idle_load_perc, input$idle_on_perc))
+    off_perc = 100 - on_load_sum
+    total_perc = on_load_sum + off_perc
+
+    total_hours = input$shift_count * 8
+    working_hours = round(total_hours * input$idle_usage_per/100,0)
+
+    idle_idling_working_hours = round(working_hours * input$idle_on_perc/100,0)
+    idle_loading_working_hours = round(working_hours * input$idle_load_perc/100,0)
+    idle_off_working_hours = working_hours - idle_idling_working_hours - idle_loading_working_hours
+
+    idling_ldp = idle_idling_working_hours * input$idle_on_lph + idle_loading_working_hours * input$idle_loaded_lph
+    idling_all_ldp = idling_ldp * input$hemm_count
+
+    mod_idle_hours_consump = input$idle_mod_on_val * input$idle_on_lph
+
+    idle_mod_consump_lpd = idling_ldp - mod_idle_hours_consump
+    idle_mod_all_consump_lpd = idle_mod_consump_lpd * input$hemm_count
+
+    data.frame(
+      on_load_sum = on_load_sum,
+      off_perc = off_perc,
+
+      idle_idling_working_hours = idle_idling_working_hours,
+      idle_loading_working_hours = idle_loading_working_hours,
+      idle_off_working_hours = idle_off_working_hours,
+
+      idling_ldp = idling_ldp,
+      idling_all_ldp = idling_all_ldp,
+      idle_mod_consump_lpd = idle_mod_consump_lpd,
+      idle_mod_all_consump_lpd = idle_mod_all_consump_lpd
+    )
+  })
+####################FIX THIS SUM TO 100 ERROR
+  # observe({
+  #   if (total()$total_perc == 100) {
+  #     updateTextInput(session, "idle_load_perc", label = "% Time Loaded State")
+  #     updateTextInput(session, "idle_on_perc", label = "% Time Idling State")
+  #   } else {
+  #     updateTextInput(session, "idle_load_perc", label = "Please enter a correct value")
+  #     updateTextInput(session, "idle_on_perc", label = "Please enter a correct value")
+  #   }
+  # })
+
+  output$idle_off_perc <- renderText({
+    idle_total()$off_perc
+  })
+
+  output$idle_consump_lpd <- renderText({
+    format_indian(idle_total()$idling_ldp)
+  })
+  output$idle_all_consump_lpd <- renderText({
+    format_indian(idle_total()$idling_all_ldp)
+  })
+
+  output$idle_idling_working_hours <- renderText({
+    idle_total()$idle_idling_working_hours
+  })
+  output$idle_loading_working_hours <- renderText({
+    idle_total()$idle_loading_working_hours
+  })
+  output$idle_off_working_hours <- renderText({
+    idle_total()$idle_off_working_hours
+  })
+
+  output$idle_mod_consump_lpd <- renderText({
+    format_indian(idle_total()$idle_mod_consump_lpd)
+  })
+  output$idle_mod_all_consump_lpd <- renderText({
+    format_indian(idle_total()$idle_mod_all_consump_lpd)
+  })
+
+
 
 
 

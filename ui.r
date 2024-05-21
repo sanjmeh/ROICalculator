@@ -164,30 +164,31 @@ ui <- shinyUI(fluidPage(
                                         )
                                  ),
                                  column(width = 4,
-                                        fluidRow(
-                                          h3('IDLE Time Loss'),
-                                          actionButton("idle_info","Info",
-                                                       icon("lightbulb"),
-                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                          numericInput("idle_on_lph","Idle ON Lires/Hr",value=8),
-                                          fluidRow(
-                                            column(6,
-                                                   numericInput("idle_assumed_on","% Assumed Data Cycle",value=30)
-                                            ),
-                                            column(6,
-                                                   numericInput("idle_disc_on","% Discovered Data Cycle",value=40)
-                                            )
-                                          ),
-                                          numericInput("idle_loaded_lph","Idle Loaded Lires/Hr",value=8),
-                                          fluidRow(
-                                            column(6,
-                                                   numericInput("idle_assumed_loaded", "% Assumed Data Cycle", value = 50)
-                                            ),
-                                            column(6,
-                                                   numericInput("idle_disc_loaded", "% Discovered Data Cycle", value = 40)
-                                            )
-                                          )
-                                        )
+                                        # fluidRow(
+                                        #   h3('IDLE Time Loss'),
+                                        #   actionButton("idle_info","Info",
+                                        #                icon("lightbulb"),
+                                        #                style="color: #fff; background-color: #008000; border-color: #2e6da4"),
+                                        #   numericInput("idle_on_lph","Idle ON Lires/Hr",value=8),
+                                        #   fluidRow(
+                                        #     column(6,
+                                        #            numericInput("idle_assumed_on","% Assumed Data Cycle",value=30)
+                                        #     ),
+                                        #     column(6,
+                                        #            numericInput("idle_disc_on","% Discovered Data Cycle",value=40)
+                                        #     )
+                                        #   ),
+                                        #   numericInput("idle_loaded_lph","Idle Loaded Lires/Hr",value=8),
+                                        #   fluidRow(
+                                        #     column(6,
+                                        #            numericInput("idle_assumed_loaded", "% Assumed Data Cycle", value = 50)
+                                        #     ),
+                                        #     column(6,
+                                        #            numericInput("idle_disc_loaded", "% Discovered Data Cycle", value = 40)
+                                        #     )
+                                        #   )
+                                        # )
+
                                         # fluidRow(
                                         #   tableOutput("idle_calculations")
                                         # ),
@@ -211,6 +212,65 @@ ui <- shinyUI(fluidPage(
                         )
                       )
              ),
+
+
+
+             # IDLING Tab
+
+             tabPanel("Idling",fluidPage(column(6,
+                                                fluidPage(
+                                                  fluidRow(h1("Current State")),
+                                                  fluidRow(column(4,
+                                                                  numericInput("idle_usage_per","% Machinery Utilisation",min=-10,max=100,value=60)),
+                                                           column(4,
+                                                                  numericInput("idle_load_perc","% Time Loaded State",min=-10,max=100,value=50)),
+                                                           column(4,
+                                                                  numericInput("idle_on_perc","% Time Idling State",min=-10,max=100,value=30))),
+
+                                                  fluidRow(column(4,
+                                                                  h5("Idling Hours"),
+                                                                  verbatimTextOutput("idle_idling_working_hours")),
+                                                           column(4,
+                                                                  h5("Loading Hours"),
+                                                                  verbatimTextOutput("idle_loading_working_hours")),
+                                                           column(4,
+                                                                  h5("Off Hours"),
+                                                                  verbatimTextOutput("idle_off_working_hours"))),
+
+                                                  fluidRow(column(6,
+                                                                  numericInput("idle_on_lph","Idling Lires/Hr",value=8)),
+                                                           column(6,
+                                                                  numericInput("idle_loaded_lph","Loaded Lires/Hr",value=16))),
+                                                  fluidRow(column(12,
+                                                                  h5("Litres Consumed/Day/HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_consump_lpd"),
+                                                                  h4("Current Consumption:"))),
+                                                  fluidRow(column(12,
+                                                                  h5("Litres Consumed/Day/All HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_all_consump_lpd"))
+                                                           )
+                                                  )
+                                                ),
+                                         column(6,
+                                                fluidPage(
+                                                  fluidRow(h1("Future State")),
+                                                  fluidRow(column(6,numericInput("idle_mod_off_val","changed off hours",min=-10,max=100,value=3)),
+                                                           column(6,numericInput("idle_mod_on_val","changed ilde hours",min=-10,max=100,value=4))),
+                                                  fluidRow(column(12,
+                                                                  h5("New Litres Consumed/Day/HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_mod_consump_lpd"),
+                                                                  h4("New Consumption:"))),
+                                                  fluidRow(column(12,
+                                                                  h5("Litres Consumed/Day/All HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_mod_all_consump_lpd"))),
+                                                  fluidRow(h5("difference in /day fuel consumption/hemm"),verbatimTextOutput("idle_lpd_diff")),
+                                                  fluidRow(h5("% difference")) # or maybe a plot differnece
+                                                )
+                                         ))
+                      ),
+
+
+
 
              # MOVEMENT TAB
 
