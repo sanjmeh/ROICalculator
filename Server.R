@@ -297,7 +297,7 @@ server <- function(input, output, session) {
       geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 3.5) +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions") +
-      theme_void()
+      theme_void() + theme(legend.position = "none")
 
     # Convert ggplot object to plotly for interactive plots
     p_plotly <- ggplotly(gg, tooltip = c("x", "y"))
@@ -530,23 +530,46 @@ server <- function(input, output, session) {
     return(perc_val)
   })
 
+  # output$idling_plot <- renderPlotly({
+  #   data = data.frame(
+  #     title = c("Daily Consumption/HEMM"),
+  #     original = c(idle_total()$idling_ldp),
+  #     saved = c(idle_total()$idle_mod_consump_lpd)
+  #   )
+  #
+  #   gg <- ggplot(data)+
+  #     geom_bar(aes(x=title,y=original,fill="original_col"),stat="identity",position = position_dodge(width = 0.7))+
+  #     geom_bar(aes(x=title,y=saved, fill="saved_col"),stat="identity",position=position_dodge(width = 0.7))+
+  #     geom_text(aes(x=title, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5)+
+  #     scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
+  #     labs(fill = "Saving Comparisions") +
+  #     theme(legend.position = "none")
+  #
+  #   return(gg)
+  # })
   output$idling_plot <- renderPlotly({
-    data = data.frame(
-      title = c("Daily Consumption/HEMM"),
-      original = c(idle_total()$idling_ldp),
-      saved = c(idle_total()$idle_mod_consump_lpd)
+    data <- data.frame(
+      title = rep("Daily Consumption/HEMM", 2),
+      type = c("Original", "Saved"),
+      value = c(idle_total()$idling_ldp, idle_total()$idle_mod_consump_lpd),
+      explanation = c(
+        paste("Originally <b>",idle_total()$idling_ldp," litres</b> of fuel is consumed per day"),
+        paste("After MindShift <b>",idle_total()$idle_mod_consump_lpd," litres</b> of fuel is consumed per day"))
     )
 
-    gg <- ggplot(data)+
-      geom_bar(aes(x=title,y=original,fill="original_col"),stat="identity",position = "dodge")+
-      geom_bar(aes(x=title,y=saved, fill="saved_col"),stat="identity",position="dodge")+
-      geom_text(aes(x=title, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5)+
-      scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
-      labs(fill = "Saving Comparisions") +
-      theme(legend.position = "none")
+    gg <- ggplot(data, aes(y = title, x = value, fill = type, text=explanation)) +
+      geom_bar(stat = "identity", position = position_dodge(width = 1)) +
+      geom_text(aes(x=value/2,label = format_indian(value)),
+                position = position_dodge(width = 1),
+                vjust = 0.5, hjust = -0.3, size = 3.5) +
+      scale_fill_manual(values = c("Original" = "blue", "Saved" = "orange")) +
+      labs(fill = "Saving Comparisons",x="Litres Consumed /HEMM/Day",y="Comparision Before After") +
+      theme(legend.position = "none") +
+      coord_flip()
 
-    return(gg)
+    ggplotly(gg, tooltip = "text")
   })
+
 
 
 

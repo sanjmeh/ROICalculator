@@ -172,9 +172,9 @@ ui <- shinyUI(fluidPage(
                           # )
                         ),
                         fluidRow(h1("Overall Savings"),
-                                 column(width=6,h3("Litres of savings in fuel"),
+                                 column(width=6,h3("Fuel Savings (Litres)"),
                                         verbatimTextOutput("pilferage_explanation")),
-                                 column(width=6,h3("Accounts for:"),
+                                 column(width=6,h3("Fuel Savings (₹)"),
                                         verbatimTextOutput("pilferage_cost"))
                         )
                       )
@@ -215,7 +215,11 @@ ui <- shinyUI(fluidPage(
                                                   fluidRow(column(12,
                                                                   h5("Litres Consumed/Day/All HEMM (Litres)"),
                                                                   verbatimTextOutput("idle_all_consump_lpd"))),
-                                                  fluidRow(column(12,h4("A possible scenario to increase savings:"),p("Monitoring of off and idling hours can help instruct the reponsible to reduce idling by increasing off time of the machinery resulting in fuel savings.")))
+                                                  fluidRow(column(12,
+                                                                  h4("A possible scenario to increase savings:"),
+                                                                  p("Prolonged periods of idling during operational shifts result in escalated fuel consumption rates and diminished productivity levels.
+                                                                    This application facilitates clients in monitoring idle, loading, and off periods,
+                                                                    thereby enabling the optimization of productivity and the maximization of output yields.")))
                                                   )
                                                 ),
                                          column(6,
@@ -237,7 +241,14 @@ ui <- shinyUI(fluidPage(
                                                            column(6,
                                                                   h5("% Difference"),
                                                                   verbatimTextOutput("idle_lpd_diff_perc"))),
-                                                  fluidRow(column(12,plotlyOutput("idling_plot")))
+                                                  fluidRow(column(8,plotlyOutput("idling_plot")),
+                                                           column(4,
+                                                                  h4("Graphical Understanding:"),
+                                                                  p("In the realm of heavy equipment and machinery management,
+                                                                     the initial bar denotes the daily fuel consumption per Heavy Earth Moving Machinery (HEMM).
+                                                                     However, after investing in MindShift Analytics,
+                                                                     one gains the capability to meticulously track and mitigate idle durations,
+                                                                     consequently reducing consumption metrics and enhancing operational efficiency.")))
                                                   )
                                          ))
                       ),
