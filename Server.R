@@ -5,7 +5,7 @@ library(plotly)
 library(stringr)
 library(scales)
 
-server <- function(input, output) {
+server <- function(input, output, session) {
 
   # Values relevant across all calculations put in a reactive for easier access
 
@@ -72,9 +72,6 @@ server <- function(input, output) {
     ref_per_month = round(ref_per_month,0)
     ref_per_year = round(ref_per_month * 12,digits=0)
 
-    idle_assumed_consump = (input$idle_loaded_lph*(input$idle_assumed_loaded/100) + input$idle_on_lph*(input$idle_assumed_on /100) + 0*(input$idle_off/100))/1
-    idle_actual_consump = (input$idle_loaded_lph*(input$idle_disc_loaded/100) + input$idle_on_lph*(input$idle_disc_on/100) + 0*(input$idle_off/100))/1
-
     data.frame(
       ur_daily_vol = ur_daily_vol,
       under_reporting_yearly =  under_reporting_yearly,
@@ -86,11 +83,7 @@ server <- function(input, output) {
 
       vol_saved_yearly = vol_saved_yearly,
       saving_ftheft = saving_ftheft,
-      saving_ur = saving_ur,
-
-      idle_assumed_consump = idle_assumed_consump,
-      idle_actual_consump = idle_actual_consump
-
+      saving_ur = saving_ur
     )
   })
 
@@ -196,6 +189,12 @@ server <- function(input, output) {
     }
   }
 
+  updateTextOutput <- function(outputId, newText) {
+    output[[outputId]] <- renderText({
+      newText
+    })
+  }
+
   # ********************************************
   # ********************************************
   # ********************************************
@@ -298,7 +297,7 @@ server <- function(input, output) {
       geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 3.5) +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions") +
-      theme_void()
+      theme_void() + theme(legend.position = "none")
 
     # Convert ggplot object to plotly for interactive plots
     p_plotly <- ggplotly(gg, tooltip = c("x", "y"))
@@ -313,8 +312,6 @@ server <- function(input, output) {
       scale_fill_manual(values = c('#FF9999', '#66B3FF', '#99FF99', '#FFCC99')) +
       theme_void()
   })
-
-
 
 
 
@@ -404,17 +401,6 @@ server <- function(input, output) {
     return(p_plotly)
   })
 
-  output$idle_table <- renderTable({
-    data <- data.frame(
-      Data = c("Assumed","Observed"),
-      On_Lph = c(input$idle_assumed_on,input$idle_disc_on),
-      Loaded_Lph = c(input$idle_assumed_loaded,input$idle_disc_loaded),
-      Consumption = c(pilferage_values()$idle_assumed_consump,pilferage_values()$idle_actual_consump)
-    )
-
-    return(data)
-  })
-
   output$pilferage_explanation <- renderText({
     format_indian(pilferage_values()$vol_saved_yearly)
   })
@@ -422,6 +408,168 @@ server <- function(input, output) {
   output$pilferage_cost <- renderText({
     format_indian(pilferage_values()$vol_saved_yearly * 86)
   })
+
+
+
+  # IDLING Tab
+
+  idle_total <- reactive({
+    #checking input to prevent crashes
+    req(!is.null(input$idle_load_perc), input$idle_load_perc != 0)
+    req(!is.null(input$idle_on_perc), input$idle_on_perc != 0)
+    # req(!is.null(input$idle_mod_off_val), input$idle_mod_off_val != 0)
+    req(!is.null(input$idle_mod_on_val), input$idle_mod_on_val != 0)
+
+
+    on_load_sum = sum(c(input$idle_load_perc, input$idle_on_perc))
+    off_perc = 100 - on_load_sum
+    total_perc = on_load_sum + off_perc
+
+    total_hours = input$shift_count * 8
+    working_hours = round(total_hours * input$idle_usage_per/100,0)
+
+    idle_idling_working_hours = round(working_hours * input$idle_on_perc/100,0)
+    idle_loading_working_hours = round(working_hours * input$idle_load_perc/100,0)
+    idle_off_working_hours = working_hours - idle_idling_working_hours - idle_loading_working_hours
+
+    idling_ldp = idle_idling_working_hours * input$idle_on_lph + idle_loading_working_hours * input$idle_loaded_lph
+    idling_all_ldp = idling_ldp * input$hemm_count
+
+    mod_idle_hours_consump = input$idle_mod_on_val * input$idle_on_lph
+
+    idle_mod_consump_lpd = idling_ldp - idle_idling_working_hours * input$idle_on_lph + mod_idle_hours_consump
+    idle_mod_all_consump_lpd = idle_mod_consump_lpd * input$hemm_count
+
+    data.frame(
+      on_load_sum = on_load_sum,
+      off_perc = off_perc,
+
+      working_hours = working_hours,
+      idle_idling_working_hours = idle_idling_working_hours,
+      idle_loading_working_hours = idle_loading_working_hours,
+      idle_off_working_hours = idle_off_working_hours,
+
+      idling_ldp = idling_ldp,
+      idling_all_ldp = idling_all_ldp,
+      idle_mod_consump_lpd = idle_mod_consump_lpd,
+      idle_mod_all_consump_lpd = idle_mod_all_consump_lpd
+    )
+  })
+
+
+  # New Hours input check and dynamic update
+  observeEvent(input$idle_mod_on_val, {
+    updated_val = idle_total()$working_hours - input$idle_mod_on_val - idle_total()$idle_loading_working_hours
+
+    original_sum <- idle_total()$idle_off_working_hours + idle_total()$idle_idling_working_hours
+    new_sum <- input$idle_mod_on_val + updated_val
+
+    # check for: 1.sum of old and new value stays same 2.neither value gets to 0
+    if(original_sum != new_sum || updated_val == 0 || input$idle_mod_on_val == 0){
+      updated_val = idle_total()$idle_off_working_hours
+      updateNumericInput(session, "idle_mod_on_val", value = idle_total()$idle_idling_working_hours)
+    } else {
+      updateTextOutput("idle_mod_off_val", updated_val)
+    }
+  })
+
+  # Current State Percentage input check to prevent unexpected
+  observe({
+    # Idling and Loading Percentage Check:
+
+    on_load_sum <- idle_total()$on_load_sum
+
+    # idle+load+offtime = working_hours
+    # idle_perc + load_perc + offTtime_perc = 100 perc
+    # offTime perc (has to be +ve) = 100 - idle_perc - load_perc
+    if (100 - on_load_sum > 0) {
+      updateTextInput(session, "idle_load_perc", label = "% Time Loaded State")
+      updateTextInput(session, "idle_on_perc", label = "% Time Idling State")
+    } else {
+      updateTextInput(session, "idle_load_perc", value = 50)
+      updateTextInput(session, "idle_on_perc", value = 30)
+    }
+
+  })
+
+
+  output$idle_off_perc <- renderText({
+    idle_total()$off_perc
+  })
+
+  output$idle_consump_lpd <- renderText({
+    format_indian(idle_total()$idling_ldp)
+  })
+  output$idle_all_consump_lpd <- renderText({
+    format_indian(idle_total()$idling_all_ldp)
+  })
+
+  output$idle_idling_working_hours <- renderText({
+    idle_total()$idle_idling_working_hours
+  })
+  output$idle_loading_working_hours <- renderText({
+    idle_total()$idle_loading_working_hours
+  })
+  output$idle_off_working_hours <- renderText({
+    idle_total()$idle_off_working_hours
+  })
+
+  output$idle_mod_consump_lpd <- renderText({
+    format_indian(idle_total()$idle_mod_consump_lpd)
+  })
+  output$idle_mod_all_consump_lpd <- renderText({
+    format_indian(idle_total()$idle_mod_all_consump_lpd)
+  })
+
+  output$idle_lpd_diff <- renderText({
+    idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd
+  })
+  output$idle_lpd_diff_perc <- renderText({
+    perc_val = (idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd)/idle_total()$idling_ldp
+    perc_val = perc_val * 100
+    return(perc_val)
+  })
+
+  # output$idling_plot <- renderPlotly({
+  #   data = data.frame(
+  #     title = c("Daily Consumption/HEMM"),
+  #     original = c(idle_total()$idling_ldp),
+  #     saved = c(idle_total()$idle_mod_consump_lpd)
+  #   )
+  #
+  #   gg <- ggplot(data)+
+  #     geom_bar(aes(x=title,y=original,fill="original_col"),stat="identity",position = position_dodge(width = 0.7))+
+  #     geom_bar(aes(x=title,y=saved, fill="saved_col"),stat="identity",position=position_dodge(width = 0.7))+
+  #     geom_text(aes(x=title, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5)+
+  #     scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
+  #     labs(fill = "Saving Comparisions") +
+  #     theme(legend.position = "none")
+  #
+  #   return(gg)
+  # })
+  output$idling_plot <- renderPlotly({
+    data <- data.frame(
+      title = rep("Daily Consumption/HEMM", 2),
+      type = c("Original", "Saved"),
+      value = c(idle_total()$idling_ldp, idle_total()$idle_mod_consump_lpd),
+      explanation = c(
+        paste("Originally <b>",idle_total()$idling_ldp," litres</b> of fuel is consumed per day"),
+        paste("After MindShift <b>",idle_total()$idle_mod_consump_lpd," litres</b> of fuel is consumed per day"))
+    )
+
+    gg <- ggplot(data, aes(y = title, x = value, fill = type, text=explanation)) +
+      geom_bar(stat = "identity", position = position_dodge(width = 1)) +
+      geom_text(aes(x=value/2,label = format_indian(value)),
+                position = position_dodge(width = 1),
+                vjust = 0.5, hjust = -0.3, size = 3.5) +
+      scale_fill_manual(values = c("Original" = "blue", "Saved" = "orange")) +
+      labs(fill = "Saving Comparisons",x="Litres Consumed /HEMM/Day",y="Comparision Before After") +
+      theme(legend.position = "none") +
+      coord_flip()
+
+    ggplotly(gg, tooltip = "text")
+  })
+
 
 
 
@@ -480,20 +628,30 @@ server <- function(input, output) {
 
   output$summary_waterfall <- renderPlotly({
     # manpower sum
-    mp_sum = cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
+    mp_sum <- cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
 
     # pilferage sum
-    pl_sum = pilferage_values()$vol_saved_yearly * 86
+    pl_sum <- pilferage_values()$vol_saved_yearly * 86
 
     # movement sum
-    mv_sum = travelling_data()$annual_movable_sum
+    mv_sum <- travelling_data()$annual_movable_sum
 
-    x = list("Manpower", "Pilferage", "Movement", "Annual Sum")
-    measure = c("relative", "relative", "relative", "total")
-    text = c("Manpower Savings", "Pilferage Savings", "Movement Savings", "Total Sum (₹)")
-    y = c(mp_sum, pl_sum, mv_sum, mp_sum + pl_sum + mv_sum)
-    labels = c(format_indian(mp_sum), format_indian(pl_sum), format_indian(mv_sum), format_indian(mp_sum + pl_sum + mv_sum))
-    data = data.frame(x = factor(x, levels = x), measure, text, y, labels)
+    #idling sum
+    idle_sum <- (idle_total()$idling_all_ldp - idle_total()$idle_mod_all_consump_lpd)*365*86
+
+    x <- list("Manpower", "Pilferage", "Movement", "Idling", "Annual Sum")
+    measure <- c("relative", "relative", "relative", "relative", "total")
+    text <- c("Manpower Savings", "Pilferage Savings", "Movement Savings", "Idling Savings", "Total Sum (₹)")
+    y <- c(mp_sum, pl_sum, mv_sum, idle_sum, mp_sum + pl_sum + mv_sum + idle_sum)
+    labels <- c(format_indian(mp_sum), format_indian(pl_sum), format_indian(mv_sum), format_indian(idle_sum), format_indian(mp_sum + pl_sum + mv_sum + idle_sum))
+
+    data <- data.frame(
+      x = factor(x, levels = x),
+      measure = measure,
+      text = text,
+      y = y,
+      labels = labels
+    )
 
     fig <- plot_ly(
       data, name = "Savings", type = "waterfall", measure = ~measure,
@@ -504,7 +662,7 @@ server <- function(input, output) {
 
     fig <- fig %>%
       layout(
-        title = "Overall Annual Savings across 3 Domains Yearly(₹)",
+        title = "Overall Annual Savings across 4 Domains Yearly(₹)",
         xaxis = list(title = "Domains"),
         yaxis = list(title = "Metrics"),
         autosize = TRUE,

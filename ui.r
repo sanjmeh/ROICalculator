@@ -130,8 +130,8 @@ ui <- shinyUI(fluidPage(
                           )
                         ),
                         fluidRow(
-                          column(width = 9,
-                                 column(width = 4,
+                          column(width = 6,
+                                 column(width = 6,
                                         fluidRow(
                                           h3('Under Refueling and Over Reporting'),
                                           # useShinyalert(),  # Set up shinyalert
@@ -148,7 +148,7 @@ ui <- shinyUI(fluidPage(
                                           numericInput("pilferage_save_ur","% Savings from Over and Under reporting:",value=10)
                                         )
                                  ),
-                                 column(width = 4,
+                                 column(width = 6,
                                         fluidRow(
                                           h3('HEMM Fuel Tank Theft'),
                                           actionButton("theft_info","Info",
@@ -162,55 +162,99 @@ ui <- shinyUI(fluidPage(
                                         ),
                                         fluidRow(numericInput("pilferage_save_theft","% Savings from HEMM Tank Theft:",value=10)
                                         )
-                                 ),
-                                 column(width = 4,
-                                        fluidRow(
-                                          h3('IDLE Time Loss'),
-                                          actionButton("idle_info","Info",
-                                                       icon("lightbulb"),
-                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                          numericInput("idle_on_lph","Idle ON Lires/Hr",value=8),
-                                          fluidRow(
-                                            column(6,
-                                                   numericInput("idle_assumed_on","% Assumed Data Cycle",value=30)
-                                            ),
-                                            column(6,
-                                                   numericInput("idle_disc_on","% Discovered Data Cycle",value=40)
-                                            )
-                                          ),
-                                          numericInput("idle_loaded_lph","Idle Loaded Lires/Hr",value=8),
-                                          fluidRow(
-                                            column(6,
-                                                   numericInput("idle_assumed_loaded", "% Assumed Data Cycle", value = 50)
-                                            ),
-                                            column(6,
-                                                   numericInput("idle_disc_loaded", "% Discovered Data Cycle", value = 40)
-                                            )
-                                          )
-                                        )
-                                        # fluidRow(
-                                        #   tableOutput("idle_calculations")
-                                        # ),
-                                        # fluidRow(numericInput("idle_save_theft","% Savings IDLE monitoring:",value=10))
                                  )
                           ),
-                          column(width = 3,
-                                 fluidRow(plotlyOutput("pilferage_hist")),
-                                 br(),
-                                 fluidRow(tableOutput("idle_table"))
-                          )
+                          column(width = 4,
+                                 fluidRow(plotlyOutput("pilferage_hist"))),
+                          column(2,h4("Explanation of scenarios:"))
                           # column(width=1,
                           #        h1("video space"))
                           # )
                         ),
                         fluidRow(h1("Overall Savings"),
-                                 column(width=6,h3("Litres of savings in fuel"),
+                                 column(width=6,h3("Fuel Savings (Litres)"),
                                         verbatimTextOutput("pilferage_explanation")),
-                                 column(width=6,h3("Accounts for:"),
+                                 column(width=6,h3("Fuel Savings (₹)"),
                                         verbatimTextOutput("pilferage_cost"))
                         )
                       )
              ),
+
+
+
+             # IDLING Tab
+
+             tabPanel("Idling",fluidPage(column(6,
+                                                fluidPage(
+                                                  fluidRow(h1("Current State")),
+                                                  fluidRow(column(4,
+                                                                  numericInput("idle_usage_per","% Machinery Utilisation",min=-10,max=100,value=60)),
+                                                           column(4,
+                                                                  numericInput("idle_load_perc","% Time Loaded State",min=-10,max=100,value=50)),
+                                                           column(4,
+                                                                  numericInput("idle_on_perc","% Time Idling State",min=-10,max=100,value=30))),
+
+                                                  fluidRow(column(4,
+                                                                  h5("Idling Hours"),
+                                                                  verbatimTextOutput("idle_idling_working_hours")),
+                                                           column(4,
+                                                                  h5("Loading Hours"),
+                                                                  verbatimTextOutput("idle_loading_working_hours")),
+                                                           column(4,
+                                                                  h5("Off Hours"),
+                                                                  verbatimTextOutput("idle_off_working_hours"))),
+
+                                                  fluidRow(column(6,
+                                                                  numericInput("idle_on_lph","Idling Lires/Hr",value=8)),
+                                                           column(6,
+                                                                  numericInput("idle_loaded_lph","Loaded Lires/Hr",value=16))),
+                                                  fluidRow(column(12,
+                                                                  h4("Current Consumption:"))),
+                                                                  h5("Litres Consumed/Day/HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_consump_lpd"),
+                                                  fluidRow(column(12,
+                                                                  h5("Litres Consumed/Day/All HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_all_consump_lpd"))),
+                                                  fluidRow(column(12,
+                                                                  h4("A possible scenario to increase savings:"),
+                                                                  p("Prolonged periods of idling during operational shifts result in escalated fuel consumption rates and diminished productivity levels.
+                                                                    This application facilitates clients in monitoring idle, loading, and off periods,
+                                                                    thereby enabling the optimization of productivity and the maximization of output yields.")))
+                                                  )
+                                                ),
+                                         column(6,
+                                                fluidPage(
+                                                  fluidRow(h1("Future State")),
+                                                  fluidRow(column(6,numericInput("idle_mod_on_val","New Idling Hours",value=1)),
+                                                           column(6,
+                                                                  div(h5("New Off Hours"),verbatimTextOutput("idle_mod_off_val")))),
+                                                  fluidRow(column(12,
+                                                                  h4("New Consumption:"))),
+                                                                  h5("New Litres Consumed/Day/HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_mod_consump_lpd"),
+                                                  fluidRow(column(12,
+                                                                  h5("Litres Consumed/Day/All HEMM (Litres)"),
+                                                                  verbatimTextOutput("idle_mod_all_consump_lpd"))),
+                                                  fluidRow(column(6,
+                                                                  h5("Consumption Difference (Litres/Day/HEMM)"),
+                                                                  verbatimTextOutput("idle_lpd_diff")),
+                                                           column(6,
+                                                                  h5("% Difference"),
+                                                                  verbatimTextOutput("idle_lpd_diff_perc"))),
+                                                  fluidRow(column(8,plotlyOutput("idling_plot")),
+                                                           column(4,
+                                                                  h4("Graphical Understanding:"),
+                                                                  p("In the realm of heavy equipment and machinery management,
+                                                                     the initial bar denotes the daily fuel consumption per Heavy Earth Moving Machinery (HEMM).
+                                                                     However, after investing in MindShift Analytics,
+                                                                     one gains the capability to meticulously track and mitigate idle durations,
+                                                                     consequently reducing consumption metrics and enhancing operational efficiency.")))
+                                                  )
+                                         ))
+                      ),
+
+
+
 
              # MOVEMENT TAB
 

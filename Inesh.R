@@ -4,6 +4,8 @@ salaries <- c(1200000, 1300000, 1300000, 1400000)
 # Format the numbers with commas
 salaries <- comma(salaries)
 
+
+# Indian style formating on numbers: 1,00,000
 format_indian <- function(x) {
   format_single <- function(y) {
     y <- as.character(y)
@@ -23,4 +25,11 @@ format_indian <- function(x) {
   } else {
     format_single(x)
   }
+}
+
+# Function for dynamically updating text outputs
+updateTextOutput <- function(outputId, newText) {
+  output[[outputId]] <- renderText({
+    newText
+  })
 }
