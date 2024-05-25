@@ -286,21 +286,31 @@ server <- function(input, output, session) {
 
   output$histogram <- renderPlotly({
 
+    orig_explanation <- c(paste("Current Cost: <b>₹",format_indian(values()$logger_total_cost),"/-</b> of field loggers"),
+                          paste("Current Cost: <b>₹",format_indian(values()$dto_total_cost),"/-</b> of data entry operators"),
+                          paste("Current Cost: <b>₹",format_indian(values()$accountant_total_cost),"/-</b> of accountants"),
+                          paste("Current Cost: <b>₹",format_indian(values()$dipatcher_total_cost),"/-</b> of fuel dispatcher"))
+
+    saved_explanation <- c(paste("By saving ",input$manpower_save_fdl,"%, future cost: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Logger
+                           paste("By saving ",input$manpower_save_dto,"%, future cost: <b>₹",format_indian(cost.df()$Saved[2]),"/-</b>"), #Data Entry Operator
+                           paste("By saving ",input$manpower_save_accounts,"%, future cost: <b>₹",format_indian(cost.df()$Saved[3]),"/-</b>"), #Accountant
+                           paste("By saving ",input$manpower_save_fdc,"%, future cost: <b>₹",format_indian(cost.df()$Saved[4]),"/-</b>")) #Dispatcher
+
     data <- data.frame(cost.df()$Titles, cost.df()$Cost, cost.df()$Saved)
     colnames(data) <- c("Category","Metrics","saved_value")
 
     middle_pos = cost.df()$Saved/2
 
     gg <- ggplot(data) +
-      geom_bar(aes(x = Category, y = Metrics, fill="original"), stat = "identity", position="dodge") +
-      geom_bar(aes(x = Category, y = saved_value, fill="saved"), stat = "identity", position="dodge") +
-      geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 3.5) +
+      geom_bar(aes(x = Category, y = Metrics, fill="original",text=orig_explanation), stat = "identity", position="dodge") +
+      geom_bar(aes(x = Category, y = saved_value, fill="saved",text=saved_explanation), stat = "identity", position="dodge") +
+      geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 5,color="white") +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions") +
       theme_void() + theme(legend.position = "none")
 
     # Convert ggplot object to plotly for interactive plots
-    p_plotly <- ggplotly(gg, tooltip = c("x", "y"))
+    p_plotly <- ggplotly(gg, tooltip = "text")
 
     return(p_plotly)
   })
@@ -311,7 +321,22 @@ server <- function(input, output, session) {
       coord_polar(theta = "y") +
       scale_fill_manual(values = c('#FF9999', '#66B3FF', '#99FF99', '#FFCC99')) +
       theme_void()
+
   })
+
+  output$manpower_summation <- renderText({
+    format_indian(cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4])
+  })
+  output$manpower_saving_perc <- renderText({
+    total_cost <- values()$logger_total_cost + values()$dto_total_cost + values()$accountant_total_cost + values()$dipatcher_total_cost
+    saved_cost <- cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
+
+    perc <- (total_cost - saved_cost)/total_cost
+    perc <- perc*100
+
+    return(perc)
+  })
+
 
 
 
@@ -384,19 +409,27 @@ server <- function(input, output, session) {
       original = original_value,
       saved = saved_value
     )
+    orig_explanation <- c(
+      paste("<b>",format_indian(pilferage_values()$bowser_fuel_sold_yearly),"Litres</b> of Fuel currently Sold Illegally"),
+      paste("<b>",format_indian(pilferage_values()$under_reporting_yearly),"Litres</b> of Fuel currently Under-reported")
+    )
+    saved_explanation <- c(
+      paste("With <b>",input$pilferage_save_theft,"%</b> savings, <b>",format_indian(pilferage_values()$saving_ftheft),"Litres</b> of Fuel after MindShift Under-reported"),
+      paste("With <b>",input$pilferage_save_ur,"%</b> savings, <b>",format_indian(pilferage_values()$saving_ur),"Litres</b> of Fuel after MindShift Under-reported")
+    )
 
     # Create bar plot using ggplot2
     p <- ggplot(data) +
-      geom_bar(aes(x=Category, y=original, fill="original_col"),stat = "identity",position = "dodge") +
-      geom_bar(aes(x=Category, y=saved, fill="saved_col"),stat = "identity",position = "dodge") +
-      geom_text(aes(x=Category, y=saved/2, label=format_indian(saved)), vjust=0,size=3.5) +
+      geom_bar(aes(x=Category, y=original, fill="original_col", text=orig_explanation),stat = "identity",position = "dodge") +
+      geom_bar(aes(x=Category, y=saved, fill="saved_col", text=saved_explanation),stat = "identity",position = "dodge") +
+      geom_text(aes(x=Category, y=saved/2, label=format_indian(saved)), vjust=0,size=5,color="white") +
       scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
       labs(fill = "Saving Comparisions") +
       theme(legend.position = "none")
 
 
     # Convert ggplot object to plotly for interactive plots
-    p_plotly <- ggplotly(p, tooltip = c("x", "y"))
+    p_plotly <- ggplotly(p, tooltip = c("x", "text"))
 
     return(p_plotly)
   })
@@ -561,7 +594,7 @@ server <- function(input, output, session) {
       geom_bar(stat = "identity", position = position_dodge(width = 1)) +
       geom_text(aes(x=value/2,label = format_indian(value)),
                 position = position_dodge(width = 1),
-                vjust = 0.5, hjust = -0.3, size = 3.5) +
+                vjust = 0.5, hjust = -0.3, size = 5,color="white") +
       scale_fill_manual(values = c("Original" = "blue", "Saved" = "orange")) +
       labs(fill = "Saving Comparisons",x="Litres Consumed /HEMM/Day",y="Comparision Before After") +
       theme(legend.position = "none") +
@@ -612,7 +645,7 @@ server <- function(input, output, session) {
       scale_y_continuous(trans = "log10")
 
     # Convert ggplot to plotly
-    ggplotly(gg)
+    ggplotly(gg, tooltip="fill")
   })
 
   output$movale_money_loss_hours <- renderText({
@@ -639,24 +672,33 @@ server <- function(input, output, session) {
     #idling sum
     idle_sum <- (idle_total()$idling_all_ldp - idle_total()$idle_mod_all_consump_lpd)*365*86
 
-    x <- list("Manpower", "Pilferage", "Movement", "Idling", "Annual Sum")
+    x <- list("Manpower", "Pilferage", "Idling", "Movement", "Annual Sum")
     measure <- c("relative", "relative", "relative", "relative", "total")
-    text <- c("Manpower Savings", "Pilferage Savings", "Movement Savings", "Idling Savings", "Total Sum (₹)")
-    y <- c(mp_sum, pl_sum, mv_sum, idle_sum, mp_sum + pl_sum + mv_sum + idle_sum)
-    labels <- c(format_indian(mp_sum), format_indian(pl_sum), format_indian(mv_sum), format_indian(idle_sum), format_indian(mp_sum + pl_sum + mv_sum + idle_sum))
+    text <- c("Manpower Savings", "Pilferage Savings", "Idling Savings", "Movement Savings", "Total Sum (₹)")
+    y <- c(mp_sum, pl_sum, idle_sum, mv_sum, mp_sum + pl_sum + mv_sum + idle_sum)
+    labels <- c(format_indian(mp_sum), format_indian(pl_sum), format_indian(idle_sum), format_indian(mv_sum), format_indian(mp_sum + pl_sum + mv_sum + idle_sum))
+    explanation <- c(
+      paste("Value saved from ManPower: <b>₹",format_indian(mp_sum),"/-</b>"),
+      paste("Value saved from Pilferage: <b>₹",format_indian(pl_sum),"/-</b>"),
+      paste("Value saved from Idling: <b>₹",format_indian(idle_sum),"/-</b>"),
+      paste("Value saved from Movement: <b>₹",format_indian(mv_sum),"/-</b>"),
+      paste("Yearly Savings by using <b>MindShift:  ₹",format_indian(mp_sum + pl_sum + mv_sum + idle_sum),"/-</b>")
+    )
 
     data <- data.frame(
       x = factor(x, levels = x),
       measure = measure,
       text = text,
       y = y,
-      labels = labels
+      labels = labels,
+      explanation = explanation
     )
 
     fig <- plot_ly(
       data, name = "Savings", type = "waterfall", measure = ~measure,
       x = ~x, y = ~y, text = ~labels, textposition = "outside",
       hoverinfo = "text", texttemplate = ~labels,
+      hovertext = ~explanation,
       connector = list(line = list(color = "rgb(63, 63, 63)"))
     )
 

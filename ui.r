@@ -88,6 +88,10 @@ ui <- shinyUI(fluidPage(
                                    ),
                             ),
                             column(4,
+                                   h5("Revised Cost of Manpower:"),
+                                   verbatimTextOutput("manpower_summation"),
+                                   h5("Percentage Savings:"),
+                                   verbatimTextOutput("manpower_saving_perc"),
                                    h3("Assumptions"),
                                    p("For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators."),
                                    br(),
@@ -166,17 +170,13 @@ ui <- shinyUI(fluidPage(
                           ),
                           column(width = 4,
                                  fluidRow(plotlyOutput("pilferage_hist"))),
-                          column(2,h4("Explanation of scenarios:"))
-                          # column(width=1,
-                          #        h1("video space"))
-                          # )
+                          column(2,fluidRow(
+                            h1("Fuel Savings:"),
+                            h3("Fuel Savings (Litres)"),
+                            verbatimTextOutput("pilferage_explanation"),
+                            h3("Fuel Savings (₹)"),
+                            verbatimTextOutput("pilferage_cost")))
                         ),
-                        fluidRow(h1("Overall Savings"),
-                                 column(width=6,h3("Fuel Savings (Litres)"),
-                                        verbatimTextOutput("pilferage_explanation")),
-                                 column(width=6,h3("Fuel Savings (₹)"),
-                                        verbatimTextOutput("pilferage_cost"))
-                        )
                       )
              ),
 
@@ -314,13 +314,13 @@ ui <- shinyUI(fluidPage(
                         column(4,
                                fluidRow(
                                  h3("Pilferage Section"),
-                                 numericInput("idle_off","Off duty cycle",value=20)
+                                 # numericInput("idle_off","Off duty cycle",value=20)
                                )
                         ),
                         column(4,
                                fluidRow(
                                  h3("Movement Section"),
-                                 p("add assumptions here")
+                                 # p("add assumptions here")
                                ))
                         )
                       )
