@@ -238,16 +238,16 @@ server <- function(input, output, session) {
 
 
     field_data <- data.frame(
-      FTE = c("Count of Field Loggers",
+      FTE = c("Count of Fuel Loggers",
               "Count of Data Entry Operators",
               "Count of Accountants",
               "Count of Fuel Dispatchers"
       ),
       Value = c(
-        values()$count_of_loggers,
-        values()$count_of_dataEntry,
-        input$accountant_count,
-        input$coordinator_count
+        format_indian(values()$count_of_loggers),
+        format_indian(values()$count_of_dataEntry),
+        format_indian(input$accountant_count),
+        format_indian(input$coordinator_count)
       )
     )
 
@@ -321,20 +321,16 @@ server <- function(input, output, session) {
       coord_polar(theta = "y") +
       scale_fill_manual(values = c('#FF9999', '#66B3FF', '#99FF99', '#FFCC99')) +
       theme_void()
-
   })
 
+  output$manpower_summation_current <- renderText({
+    format_indian(values()$logger_total_cost + values()$dto_total_cost + values()$dipatcher_total_cost + values()$accountant_total_cost)
+  })
   output$manpower_summation <- renderText({
     format_indian(cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4])
   })
-  output$manpower_saving_perc <- renderText({
-    total_cost <- values()$logger_total_cost + values()$dto_total_cost + values()$accountant_total_cost + values()$dipatcher_total_cost
-    saved_cost <- cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4] + 0
-
-    perc <- (total_cost - saved_cost)/total_cost
-    perc <- perc*100
-
-    return(perc)
+  output$manpower_fte_total <- renderText({
+    format_indian(values()$count_of_dataEntry + values()$count_of_loggers + input$coordinator_count + input$accountant_count)
   })
 
 

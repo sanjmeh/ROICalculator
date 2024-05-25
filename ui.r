@@ -8,6 +8,19 @@ library(shinyalert)
 
 ui <- shinyUI(fluidPage(
 
+  tags$head(
+    tags$style(HTML("
+      pre {
+        border: 2px solid #007BFF;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(200, 200, 200, 0.8));
+        cursor: not-allowed;
+        color: #333;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+    "))
+  ),
+
   titlePanel("Return Of Investment Calculator"),
 
 
@@ -41,24 +54,35 @@ ui <- shinyUI(fluidPage(
                       h1("Enter Work Parameters"),
                       sidebarLayout(
                         sidebarPanel(
-                          numericInput("logger_count_per_bowser","Number of fuel data recorders/bowser",value=1),
-                          h5("Total numbers of fuel dispatch loggers: bowser count * logger per bowser"),
-                          verbatimTextOutput("logger_count",TRUE),
-                          br(),
-                          h5("Entries per year: (entries/day * 365)"),
-                          verbatimTextOutput("entries_per_year",TRUE),
-                          numericInput("error_margin","Enter % of erroneous entries",value=5),
-                          br(),
+                          fluidRow(
+                            column(6,numericInput("logger_count_per_bowser","Fuel Logger/Bowser",value=1)),
+                            column(6,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))),
+                          div(
+                            h5("Total Fuel Loggers:"),
+                            verbatimTextOutput("logger_count",TRUE)),
+
+                          fluidRow(column(6,h5("Entries per year: (entries/day * 365)"),verbatimTextOutput("entries_per_year")),
+                                   column(6,h5("Data Entry Operators employed annually."),verbatimTextOutput("data_entry_count"))),
+
                           # h6("Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction."),
                           # h6("5 mins per entry ~ 3 mins for entry and 2 mins for correction"),
                           actionButton("dto_count_info", "Info",
                                        icon("lightbulb"),
                                        style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                          h4("Number of Data Entry Operators required per year."),
-                          verbatimTextOutput("data_entry_count",TRUE),
+                          fluidRow(column(6,numericInput("error_margin","Enter % of erroneous entries",value=5)),
+                                   column(6,
+                                          numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5))),
                           br(),
-                          numericInput("coordinator_count","Number of fuel dispatch coordinators per shift",value=1),
-                          numericInput("accountant_count","Number of FTE for data aggregation(at month end): ",value=2),
+                          fluidRow(column(6,
+                                          numericInput("coordinator_count"," Fuel Dispatchers/Shift",value=1)),
+                                   column(6,
+                                          numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5))),
+                          fluidRow(column(6,
+                                          numericInput("accountant_count","Accountants required: ",value=2)),
+                                   column(6,
+                                          numericInput("manpower_save_accounts","% Saving in Accountants",value=5))),
+
+
                           br(),
                           sliderInput("fuel_logger_cost","Avg cost of fuel logger: ",value=150000,min=100000,max=300000),
                           sliderInput("fuel_dispatcher_cost","Avg cost of fuel dispatch coordinator: ",value=500000,min=100000,max=1000000),
@@ -78,20 +102,16 @@ ui <- shinyUI(fluidPage(
                                      plotlyOutput("histogram"),
                                    ),
                                    fluidRow(
-                                     column(3,numericInput("manpower_save_accounts","% Saving in Accountants",value=5)),
-                                     column(3,numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=5)),
-                                     column(3,numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=5)),
-                                     column(3,numericInput("manpower_save_fdl","% Saving in Fuel Data Logger",value=5))
-                                   ),
-                                   fluidRow(
                                      plotOutput("pieChart")
                                    ),
                             ),
                             column(4,
-                                   h5("Revised Cost of Manpower:"),
+                                   h5("Current Cost of Manpower (₹):"),
+                                   verbatimTextOutput("manpower_summation_current"),
+                                   h5("Revised Cost of Manpower (₹):"),
                                    verbatimTextOutput("manpower_summation"),
-                                   h5("Percentage Savings:"),
-                                   verbatimTextOutput("manpower_saving_perc"),
+                                   h5("Employed FTE count:"),
+                                   verbatimTextOutput("manpower_fte_total"),
                                    h3("Assumptions"),
                                    p("For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators."),
                                    br(),
