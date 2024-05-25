@@ -258,41 +258,41 @@ ui <- shinyUI(fluidPage(
 
              # MOVEMENT TAB
 
-             tabPanel("Movement Statistics",
-                      fluidPage(
-                        fluidRow(
-                          column(6,h1("Movable Vehicle Summary/HEMM")),
-                          column(6,fluidRow(
-                            h4("Refuels/HEMM//month"),
-                            verbatimTextOutput("ref_per_month")))
-                        ),
-                        fluidRow(
-                          column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),
-                          column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=20)),
-                          column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
-                          column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
-
-                        ),
-                        fluidRow(column(width=6,
-                                        plotlyOutput("movable_visualisation")),
-                                 fluidRow(column(width=3,
-                                                 h3("Number of refuels/annually"),
-                                                 verbatimTextOutput("movable_refuel_sumannual")),
-                                          column(width=3,
-                                                 h3("Total self refeulling time"),
-                                                 verbatimTextOutput("movable_time_spent")),
-                                          fluidRow(
-                                            column(width=5,
-                                                   h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for single heavy machinery"),
-                                                   verbatimTextOutput("movale_money_loss_hours")),
-                                            column(width=5,
-                                                   h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for all heavy machinery"),
-                                                   verbatimTextOutput("movale_annual_money_loss_hours"))
-                                          )
-                                 )
-                        ),
-                      )
-             ),
+             # tabPanel("Movement Statistics",
+             #          fluidPage(
+             #            fluidRow(
+             #              column(6,h1("Movable Vehicle Summary/HEMM")),
+             #              column(6,fluidRow(
+             #                h4("Refuels/HEMM//month"),
+             #                verbatimTextOutput("ref_per_month")))
+             #            ),
+             #            fluidRow(
+             #              column(3,numericInput("movable_hemm_count","Number of movable Hemm",value=50)),
+             #              column(width=3,numericInput("movable_percent_get","% of refuellings from SFS",value=20)),
+             #              column(width=3,numericInput("movable_get_time","Time Spent in each trip",value=1)),
+             #              column(width=3,numericInput("movable_hemm_price","Enter price of HEMM/hour",value=1500)),
+             #
+             #            ),
+             #            fluidRow(column(width=6,
+             #                            plotlyOutput("movable_visualisation")),
+             #                     fluidRow(column(width=3,
+             #                                     h3("Number of refuels/annually"),
+             #                                     verbatimTextOutput("movable_refuel_sumannual")),
+             #                              column(width=3,
+             #                                     h3("Total self refeulling time"),
+             #                                     verbatimTextOutput("movable_time_spent")),
+             #                              fluidRow(
+             #                                column(width=5,
+             #                                       h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for single heavy machinery"),
+             #                                       verbatimTextOutput("movale_money_loss_hours")),
+             #                                column(width=5,
+             #                                       h3("Annual opportunity cost of 'lost hours' ₹1,500 / hr for all heavy machinery"),
+             #                                       verbatimTextOutput("movale_annual_money_loss_hours"))
+             #                              )
+             #                     )
+             #            ),
+             #          )
+             # ),
 
              tabPanel("Summary",
                       fluidPage(

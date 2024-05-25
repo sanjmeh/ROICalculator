@@ -303,7 +303,7 @@ server <- function(input, output, session) {
 
     gg <- ggplot(data) +
       geom_bar(aes(x = Category, y = Metrics, fill="original",text=orig_explanation), stat = "identity", position="dodge") +
-      geom_bar(aes(x = Category, y = saved_value, fill="saved",text=saved_explanation), stat = "identity", position="dodge") +
+      geom_bar(aes(x = Category, y = saved_value, fill="saved",text=saved_explanation), stat = "identity", position="dodge",width=0.8) +
       geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 5,color="white") +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions") +
@@ -421,7 +421,7 @@ server <- function(input, output, session) {
     # Create bar plot using ggplot2
     p <- ggplot(data) +
       geom_bar(aes(x=Category, y=original, fill="original_col", text=orig_explanation),stat = "identity",position = "dodge") +
-      geom_bar(aes(x=Category, y=saved, fill="saved_col", text=saved_explanation),stat = "identity",position = "dodge") +
+      geom_bar(aes(x=Category, y=saved, fill="saved_col", text=saved_explanation),stat = "identity",position = "dodge",width=0.8) +
       geom_text(aes(x=Category, y=saved/2, label=format_indian(saved)), vjust=0,size=5,color="white") +
       scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
       labs(fill = "Saving Comparisions") +
@@ -609,44 +609,44 @@ server <- function(input, output, session) {
 
   # MOVABLE VEHICLE COST CALCULATION
 
-  output$movable_refuel_sumannual <- renderText({
-    travelling_data()$annual_refuels
-  })
-  output$movable_time_spent <- renderText({
-    travelling_data()$movable_time_spent
-  })
-  output$ref_per_month <- renderText({
-    pilferage_values()$ref_per_month
-  })
-  output$movable_visualisation <- renderPlotly({
-    data <- data.frame(
-      category = c("Movement Statistics"),
-      value1 = c(travelling_data()$annual_refuels),
-      value2 = c(travelling_data()$movable_time_spent),
-      value3 = c(travelling_data()$movable_time_spent * input$movable_hemm_price)
-    )
-
-    colnames(data)[2:4] <- c("Annual Refuel Count", "Overall Time Spent", "Cost of Time")
-
-    # Reshape data for ggplot
-    data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent", "Cost of Time"), names_to = "variable", values_to = "value")
-
-    # Format the values with the format_indian function
-    data_long$formatted_value <- format_indian(data_long$value)
-
-    # Plot using ggplot
-    gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
-      geom_bar(stat = "identity", position = "dodge") +
-      geom_text(aes(label = formatted_value), position = position_dodge(width = 1), vjust = 0) +
-      scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange", "Cost of Time" = "green")) + # Assign colors
-      labs(title = "",
-           x = "Movement Statistics", y = "Value") +
-      theme_minimal() +
-      scale_y_continuous(trans = "log10")
-
-    # Convert ggplot to plotly
-    ggplotly(gg, tooltip="fill")
-  })
+  # output$movable_refuel_sumannual <- renderText({
+  #   travelling_data()$annual_refuels
+  # })
+  # output$movable_time_spent <- renderText({
+  #   travelling_data()$movable_time_spent
+  # })
+  # output$ref_per_month <- renderText({
+  #   pilferage_values()$ref_per_month
+  # })
+  # output$movable_visualisation <- renderPlotly({
+  #   data <- data.frame(
+  #     category = c("Movement Statistics"),
+  #     value1 = c(travelling_data()$annual_refuels),
+  #     value2 = c(travelling_data()$movable_time_spent),
+  #     value3 = c(travelling_data()$movable_time_spent * input$movable_hemm_price)
+  #   )
+  #
+  #   colnames(data)[2:4] <- c("Annual Refuel Count", "Overall Time Spent", "Cost of Time")
+  #
+  #   # Reshape data for ggplot
+  #   data_long <- tidyr::pivot_longer(data, cols = c("Annual Refuel Count", "Overall Time Spent", "Cost of Time"), names_to = "variable", values_to = "value")
+  #
+  #   # Format the values with the format_indian function
+  #   data_long$formatted_value <- format_indian(data_long$value)
+  #
+  #   # Plot using ggplot
+  #   gg <- ggplot(data_long, aes(x = category, y = value, fill = variable)) +
+  #     geom_bar(stat = "identity", position = "dodge") +
+  #     geom_text(aes(label = formatted_value), position = position_dodge(width = 1), vjust = 0) +
+  #     scale_fill_manual(values = c("Annual Refuel Count" = "lightblue", "Overall Time Spent" = "orange", "Cost of Time" = "green")) + # Assign colors
+  #     labs(title = "",
+  #          x = "Movement Statistics", y = "Value") +
+  #     theme_minimal() +
+  #     scale_y_continuous(trans = "log10")
+  #
+  #   # Convert ggplot to plotly
+  #   ggplotly(gg, tooltip="fill")
+  # })
 
   output$movale_money_loss_hours <- renderText({
     travelling_data()$movable_time_spent * input$movable_hemm_price
@@ -667,22 +667,21 @@ server <- function(input, output, session) {
     pl_sum <- pilferage_values()$vol_saved_yearly * 86
 
     # movement sum
-    mv_sum <- travelling_data()$annual_movable_sum
+    mv_sum <- 1000000
 
     #idling sum
     idle_sum <- (idle_total()$idling_all_ldp - idle_total()$idle_mod_all_consump_lpd)*365*86
 
-    x <- list("Manpower", "Pilferage", "Idling", "Movement", "Annual Sum")
-    measure <- c("relative", "relative", "relative", "relative", "total")
-    text <- c("Manpower Savings", "Pilferage Savings", "Idling Savings", "Movement Savings", "Total Sum (₹)")
-    y <- c(mp_sum, pl_sum, idle_sum, mv_sum, mp_sum + pl_sum + mv_sum + idle_sum)
-    labels <- c(format_indian(mp_sum), format_indian(pl_sum), format_indian(idle_sum), format_indian(mv_sum), format_indian(mp_sum + pl_sum + mv_sum + idle_sum))
+    x <- list("Manpower", "Pilferage", "Idling", "Annual Sum")
+    measure <- c("relative", "relative", "relative", "total")
+    text <- c("Manpower Savings", "Pilferage Savings", "Idling Savings","Total Sum (₹)")
+    y <- c(mp_sum, pl_sum, idle_sum, mp_sum + pl_sum + idle_sum)
+    labels <- c(format_indian(mp_sum), format_indian(pl_sum), format_indian(idle_sum), format_indian(mp_sum + pl_sum + idle_sum))
     explanation <- c(
       paste("Value saved from ManPower: <b>₹",format_indian(mp_sum),"/-</b>"),
       paste("Value saved from Pilferage: <b>₹",format_indian(pl_sum),"/-</b>"),
       paste("Value saved from Idling: <b>₹",format_indian(idle_sum),"/-</b>"),
-      paste("Value saved from Movement: <b>₹",format_indian(mv_sum),"/-</b>"),
-      paste("Yearly Savings by using <b>MindShift:  ₹",format_indian(mp_sum + pl_sum + mv_sum + idle_sum),"/-</b>")
+      paste("Yearly Savings by using <b>MindShift:  ₹",format_indian(mp_sum + pl_sum + idle_sum),"/-</b>")
     )
 
     data <- data.frame(
