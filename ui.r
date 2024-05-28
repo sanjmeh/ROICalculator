@@ -155,7 +155,7 @@ ui <- shinyUI(fluidPage(
                         ),
                         fluidRow(
                           column(width = 6,
-                                 column(width = 6,
+                                 column(width = 5,
                                         fluidRow(
                                           h3('Under Refueling and Over Reporting'),
                                           # useShinyalert(),  # Set up shinyalert
@@ -168,11 +168,9 @@ ui <- shinyUI(fluidPage(
                                         fluidRow(
                                           tableOutput("underreported_calculations")
                                         ),
-                                        fluidRow(
-                                          numericInput("pilferage_save_ur","% Savings from Over and Under reporting:",value=10)
-                                        )
                                  ),
-                                 column(width = 6,
+                                 column(2,""),
+                                 column(width = 5,
                                         fluidRow(
                                           h3('HEMM Fuel Tank Theft'),
                                           actionButton("theft_info","Info",
@@ -184,8 +182,6 @@ ui <- shinyUI(fluidPage(
                                         fluidRow(
                                           tableOutput("stolen_assumption")
                                         ),
-                                        fluidRow(numericInput("pilferage_save_theft","% Savings from HEMM Tank Theft:",value=10)
-                                        )
                                  )
                           ),
                           column(width = 4,
@@ -218,7 +214,7 @@ ui <- shinyUI(fluidPage(
                                                                   h5("Idling Hours"),
                                                                   verbatimTextOutput("idle_idling_working_hours")),
                                                            column(4,
-                                                                  h5("Loading Hours"),
+                                                                  h5("Loaded Hours"),
                                                                   verbatimTextOutput("idle_loading_working_hours")),
                                                            column(4,
                                                                   h5("Off Hours"),

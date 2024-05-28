@@ -60,8 +60,8 @@ server <- function(input, output, session) {
     vol_saved_yearly = under_reporting_yearly + bowser_fuel_sold_yearly
 
 
-    saving_ur = (1 - input$pilferage_save_ur/100) * under_reporting_yearly
-    saving_ftheft = (1 - input$pilferage_save_theft/100) * bowser_fuel_sold_yearly
+    saving_ur = under_reporting_yearly
+    saving_ftheft = bowser_fuel_sold_yearly
 
     ref_per_month = if(input$hemm_count != 0) {
       (input$fuel_entry_count * 30) / input$hemm_count
@@ -410,14 +410,14 @@ server <- function(input, output, session) {
       paste("<b>",format_indian(pilferage_values()$under_reporting_yearly),"Litres</b> of Fuel currently Under-reported")
     )
     saved_explanation <- c(
-      paste("With <b>",input$pilferage_save_theft,"%</b> savings, <b>",format_indian(pilferage_values()$saving_ftheft),"Litres</b> of Fuel after MindShift Under-reported"),
-      paste("With <b>",input$pilferage_save_ur,"%</b> savings, <b>",format_indian(pilferage_values()$saving_ur),"Litres</b> of Fuel after MindShift Under-reported")
+      paste("Savings of <b>",format_indian(pilferage_values()$saving_ftheft),"Litres</b> of Fuel after MindShift Under-reported"),
+      paste("Savings of <b>",format_indian(pilferage_values()$saving_ur),"Litres</b> of Fuel after MindShift Under-reported")
     )
 
     # Create bar plot using ggplot2
     p <- ggplot(data) +
-      geom_bar(aes(x=Category, y=original, fill="original_col", text=orig_explanation),stat = "identity",position = "dodge") +
-      geom_bar(aes(x=Category, y=saved, fill="saved_col", text=saved_explanation),stat = "identity",position = "dodge",width=0.8) +
+      geom_bar(aes(x=Category, y=original, fill="saved_col", text=orig_explanation),stat = "identity",position = "dodge") +
+      # geom_bar(aes(x=Category, y=saved, fill="saved_col", text=saved_explanation),stat = "identity",position = "dodge",width=0.8) +
       geom_text(aes(x=Category, y=saved/2, label=format_indian(saved)), vjust=0,size=5,color="white") +
       scale_fill_manual(values = c("original_col" = "blue", "saved_col" = "orange")) +
       labs(fill = "Saving Comparisions") +
