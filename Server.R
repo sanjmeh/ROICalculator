@@ -4,6 +4,7 @@ library(ggplot2)
 library(plotly)
 library(stringr)
 library(scales)
+options(scipen = 999)
 
 server <- function(input, output, session) {
 
@@ -286,15 +287,15 @@ server <- function(input, output, session) {
 
   output$histogram <- renderPlotly({
 
-    orig_explanation <- c(paste("Current Cost: <b>₹",format_indian(values()$logger_total_cost),"/-</b> of field loggers"),
-                          paste("Current Cost: <b>₹",format_indian(values()$dto_total_cost),"/-</b> of data entry operators"),
-                          paste("Current Cost: <b>₹",format_indian(values()$accountant_total_cost),"/-</b> of accountants"),
-                          paste("Current Cost: <b>₹",format_indian(values()$dipatcher_total_cost),"/-</b> of fuel dispatcher"))
+    orig_explanation <- c(paste("Current Cost: <b>₹",format_indian(values()$logger_total_cost),"/-</b> of <b>Field loggers</b>"),
+                          paste("Current Cost: <b>₹",format_indian(values()$dto_total_cost),"/-</b> of <b>Data Entry operators</b>"),
+                          paste("Current Cost: <b>₹",format_indian(values()$accountant_total_cost),"/-</b> of <b>Accountants</b>"),
+                          paste("Current Cost: <b>₹",format_indian(values()$dipatcher_total_cost),"/-</b> of <b>Fuel Dispatcher</b>"))
 
-    saved_explanation <- c(paste("By saving ",input$manpower_save_fdl,"%, future cost: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Logger
-                           paste("By saving ",input$manpower_save_dto,"%, future cost: <b>₹",format_indian(cost.df()$Saved[2]),"/-</b>"), #Data Entry Operator
-                           paste("By saving ",input$manpower_save_accounts,"%, future cost: <b>₹",format_indian(cost.df()$Saved[3]),"/-</b>"), #Accountant
-                           paste("By saving ",input$manpower_save_fdc,"%, future cost: <b>₹",format_indian(cost.df()$Saved[4]),"/-</b>")) #Dispatcher
+    saved_explanation <- c(paste("By saving ",input$manpower_save_fdl,"%, future cost of <b>Fuel Loggers<b>: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Logger
+                           paste("By saving ",input$manpower_save_dto,"%, future cost of <b>Data Entry Operators<b>: <b>₹",format_indian(cost.df()$Saved[2]),"/-</b>"), #Data Entry Operator
+                           paste("By saving ",input$manpower_save_accounts,"%, future cost of <b>Accountant<b>: <b>₹",format_indian(cost.df()$Saved[3]),"/-</b>"), #Accountant
+                           paste("By saving ",input$manpower_save_fdc,"%, future cost of <b>Dispatcher<b>: <b>₹",format_indian(cost.df()$Saved[4]),"/-</b>")) #Dispatcher
 
     data <- data.frame(cost.df()$Titles, cost.df()$Cost, cost.df()$Saved)
     colnames(data) <- c("Category","Metrics","saved_value")
@@ -307,7 +308,7 @@ server <- function(input, output, session) {
       geom_text(aes(x = Category, y = middle_pos, label = format_indian(saved_value)), vjust = 0, size = 5,color="white") +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions") +
-      theme_void() + theme(legend.position = "none")
+      theme_void() + theme(legend.position = "bottom")
 
     # Convert ggplot object to plotly for interactive plots
     p_plotly <- ggplotly(gg, tooltip = "text")
@@ -451,7 +452,7 @@ server <- function(input, output, session) {
 
 
     on_load_sum = sum(c(input$idle_load_perc, input$idle_on_perc))
-    off_perc = 100 - on_load_sum
+    off_perc = 100 - input$idle_usage_per
     total_perc = on_load_sum + off_perc
 
     total_hours = input$shift_count * 8
@@ -459,7 +460,7 @@ server <- function(input, output, session) {
 
     idle_idling_working_hours = round(working_hours * input$idle_on_perc/100,0)
     idle_loading_working_hours = round(working_hours * input$idle_load_perc/100,0)
-    idle_off_working_hours = working_hours - idle_idling_working_hours - idle_loading_working_hours
+    idle_off_working_hours = total_hours - working_hours
 
     idling_ldp = idle_idling_working_hours * input$idle_on_lph + idle_loading_working_hours * input$idle_loaded_lph
     idling_all_ldp = idling_ldp * input$hemm_count
@@ -472,6 +473,8 @@ server <- function(input, output, session) {
     data.frame(
       on_load_sum = on_load_sum,
       off_perc = off_perc,
+
+      total_hours = total_hours,
 
       working_hours = working_hours,
       idle_idling_working_hours = idle_idling_working_hours,
@@ -488,17 +491,25 @@ server <- function(input, output, session) {
 
   # New Hours input check and dynamic update
   observeEvent(input$idle_mod_on_val, {
-    updated_val = idle_total()$working_hours - input$idle_mod_on_val - idle_total()$idle_loading_working_hours
 
-    original_sum <- idle_total()$idle_off_working_hours + idle_total()$idle_idling_working_hours
-    new_sum <- input$idle_mod_on_val + updated_val
+    # # check for: 1.sum of old and new value stays same 2.neither value gets to 0
+    # if(original_sum != new_sum || updated_val == 0 || input$idle_mod_on_val == 0){
+    #   updated_val = idle_total()$idle_off_working_hours
+    #   updateNumericInput(session, "idle_mod_on_val", value = idle_total()$idle_idling_working_hours)
+    # } else {
+    #   updateTextOutput("idle_mod_off_val", updated_val)
+    # }
 
-    # check for: 1.sum of old and new value stays same 2.neither value gets to 0
-    if(original_sum != new_sum || updated_val == 0 || input$idle_mod_on_val == 0){
-      updated_val = idle_total()$idle_off_working_hours
+    updated_off_val = idle_total()$total_hours - input$idle_mod_on_val - idle_total()$idle_loading_working_hours
+
+    original_on_off_sum = idle_total()$idle_idling_working_hours + idle_total()$idle_off_working_hours
+    updated_on_off_sum = input$idle_mod_on_val + updated_off_val
+
+    if(original_on_off_sum != updated_on_off_sum || updated_off_val == 0 || input$idle_mod_on_val == 0){
+      updated_off_val = idle_total()$idle_off_working_hours
       updateNumericInput(session, "idle_mod_on_val", value = idle_total()$idle_idling_working_hours)
-    } else {
-      updateTextOutput("idle_mod_off_val", updated_val)
+    }else{
+      updateTextOutput("idle_mod_off_val",updated_off_val)
     }
   })
 
@@ -508,14 +519,12 @@ server <- function(input, output, session) {
 
     on_load_sum <- idle_total()$on_load_sum
 
-    # idle+load+offtime = working_hours
-    # idle_perc + load_perc + offTtime_perc = 100 perc
-    # offTime perc (has to be +ve) = 100 - idle_perc - load_perc
+    # idle+load+offtime = total_hours
     if (100 - on_load_sum > 0) {
       updateTextInput(session, "idle_load_perc", label = "% Time Loaded State")
       updateTextInput(session, "idle_on_perc", label = "% Time Idling State")
     } else {
-      updateTextInput(session, "idle_load_perc", value = 50)
+      updateTextInput(session, "idle_load_perc", value = 70)
       updateTextInput(session, "idle_on_perc", value = 30)
     }
 
