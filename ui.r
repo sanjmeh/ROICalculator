@@ -21,6 +21,9 @@ ui <- shinyUI(fluidPage(
         padding: 10px;
         margin-bottom: 10px;
       }
+      .right-align {
+      float: right;
+    }
     "))
   ),
 
@@ -29,7 +32,7 @@ ui <- shinyUI(fluidPage(
 
   h2("Universal Values"),
   fluidRow(column(width=2,
-                  numericInput("shift_count","Number of shifts",value = 2)),
+                  numericInput("shift_count","Number of shifts",value = 2,min = 1)),
            column(width=2,
                   numericInput("hemm_count","Number of HEMM",value=100)),
            column(width=2,
@@ -51,7 +54,7 @@ ui <- shinyUI(fluidPage(
                           fluidRow(
                             column(12,
                                    div(
-                                     fluidRow(column(9,h3("Step 1: Enter FTE Details")),column(3,br(),actionButton("manpower_info_button", "Info", icon = icon("info-circle")))),
+                                     fluidRow(column(9,h3("Step 1: Enter FTE Details")),column(3,div(class="right-align",br(),actionButton("manpower_info_button", "Info", icon = icon("info-circle"))))),
                                      radioButtons("manpower_dispatch_q","Do you have Fuel Dispatchers for scheduling Fuel Bowser Trips?",
                                                   choices = c("Yes" = TRUE, "No" = FALSE),
                                                   inline = TRUE),
@@ -73,7 +76,7 @@ ui <- shinyUI(fluidPage(
                           fluidRow(
                             column(12,
                                    div(
-                                     fluidRow(column(9,h3("CTC Input:")),column(3,br(),actionButton("manpower_ctc_info_button", "Info", icon = icon("info-circle")))),
+                                     fluidRow(column(9,h3(" Step 2: CTC Input")),column(3,div(class="right-align",br(),actionButton("manpower_ctc_info_button", "Info", icon = icon("info-circle"))))),
 
                                      sliderInput("fuel_dispatcher_cost","Avg Annual CTC of Fuel Dispatcher: ",value=500000,min=100000,max=1000000),
                                      sliderInput("fuel_logger_cost","Avg Annual CTC of Fuel Logger: ",,value=150000,min=100000,max=300000),
@@ -86,6 +89,7 @@ ui <- shinyUI(fluidPage(
                         mainPanel(fluidPage(
                           column(8,
                                  fluidRow(
+                                   h3("Step 3: Employee Count and Salary Comparison"),
                                    tableOutput("manpower_data")
                                  ),
                                  fluidRow(
@@ -97,8 +101,10 @@ ui <- shinyUI(fluidPage(
                                  verbatimTextOutput("manpower_summation_current"),
                                  h5("Revised Cost of Manpower (₹):"),
                                  verbatimTextOutput("manpower_summation"),
-                                 h5("Employed FTE count:"),
-                                 verbatimTextOutput("manpower_fte_total"),
+                                 splitLayout(h5("Full Time count:"),h5("Part Time count:")),
+
+                                 splitLayout(verbatimTextOutput("manpower_fte_total"),
+                                             verbatimTextOutput("manpower_pte_total")),
                                  h3("How you can acheive savings with MindShift:"),
                                  p("MindShift offers the capability to automate manual data entry, updates, and analysis processes, facilitating a transition to a time-efficient fuel management method.\n
                                    This transition leads to cost savings and increased productivity for your organization.")),
@@ -135,153 +141,100 @@ ui <- shinyUI(fluidPage(
                       ),
 
 
-
-             # MANPOWER TAB ORIGINAL
-
-             # tabPanel("Manpower Calculation",
-             #          h1("Enter Work Parameters"),
-             #          sidebarLayout(
-             #            sidebarPanel(
-             #              fluidRow(
-             #                column(6,numericInput("logger_count_per_bowser","Fuel Logger/Bowser",value=1)),
-             #                column(6,numericInput("manpower_save_fdl","% Saving in Fuel Logger",value=86))),
-             #              div(
-             #                h5("Total Fuel Loggers:"),
-             #                verbatimTextOutput("logger_count",TRUE)),
-             #
-             #              fluidRow(column(6,h5("Entries per year: (entries/day * 365)"),verbatimTextOutput("entries_per_year")),
-             #                       column(6,h5("Data Entry Operators employed annually."),verbatimTextOutput("data_entry_count"))),
-             #
-             #              # h6("Assuming that 5% of the entries made by the operator will be erroneous and hence will require correction."),
-             #              # h6("5 mins per entry ~ 3 mins for entry and 2 mins for correction"),
-             #              actionButton("dto_count_info", "Info",
-             #                           icon("lightbulb"),
-             #                           style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-             #              fluidRow(column(6,numericInput("error_margin","Enter % of erroneous entries",value=5)),
-             #                       column(6,
-             #                              numericInput("manpower_save_dto","% Saving in Data Entry Operators",value=75))),
-             #              br(),
-             #              fluidRow(column(6,
-             #                              numericInput("coordinator_count"," Fuel Dispatchers/Shift",value=2)),
-             #                       column(6,
-             #                              numericInput("manpower_save_fdc","% Saving in Fuel Dispatcher",value=50))),
-             #              fluidRow(column(6,
-             #                              numericInput("accountant_count","Accountants required: ",value=3)),
-             #                       column(6,
-             #                              numericInput("manpower_save_accounts","% Saving in Accountants",value=66))),
-             #
-             #
-             #              br(),
-             # sliderInput("fuel_logger_cost","Avg cost of fuel logger: ",value=150000,min=100000,max=300000),
-             # sliderInput("fuel_dispatcher_cost","Avg cost of fuel dispatch coordinator: ",value=500000,min=100000,max=1000000),
-             # sliderInput("data_entry_cost","Avg cost of data entry FTE: ",value=300000,min=100000,max=500000),
-             # sliderInput("accountant_cost","Avg cost of accountant FTE: ",value=300000,min=100000,max=800000),
-             #            ),
-             #            mainPanel(
-             #              fluidPage(
-             #                column(8,
-             #                       fluidRow(
-             #                         splitLayout(
-             #                           tableOutput("manpower_data"),
-             #                           tableOutput("manpower_data_2")
-             #                         )
-             #                       ),
-             #                       fluidRow(
-             #                         # plotlyOutput("histogram"),
-             #                       ),
-             #                       fluidRow(
-             #                         plotOutput("pieChart")
-             #                       ),
-             #                ),
-             #                column(4,
-             #                       h5("Current Cost of Manpower (₹):"),
-             #                       verbatimTextOutput("manpower_summation_current"),
-             #                       h5("Revised Cost of Manpower (₹):"),
-             #                       verbatimTextOutput("manpower_summation"),
-             #                       h5("Employed FTE count:"),
-             #                       verbatimTextOutput("manpower_fte_total"),
-             #                       h3("Assumptions"),
-             #                       p("For a data entry full time employee(FTE): woking 8 hour shift, 5 hours of productivity is considered in calculation of data entry operators."),
-             #                       br(),
-             #                       br(),
-             #                       p("Data Aggregator/Compiler FTE: is estimated at 5 LPA * number of compilers required to meet requirements in a year."),
-             #                       br(),
-             #                       br(),
-             #                       p("Cost of Correction: Calculating from the provided margin of errors, number of additional working hours are estimated and number of data entry operators required are calculated")
-             #                ),
-             #              )
-             #            )
-             #          )
-             # ),
-
              # PILFERAGE
 
              tabPanel("Pilferage",
                       fluidPage(
                         fluidRow(
-                          column(12,
+                          column(9,
+                                 fluidRow(column(6,h3("Monitoring Pilferage Fuel Loss")),
+                                          column(6, br(), div(class = "right-align", actionButton("pilferage_info_button", "Info", icon = icon("info-circle"))))
+                                 ),
                                  fluidRow(
                                    column(width=6,
                                           fluidRow(column(10,h4("Average Fuel Consumption/Year: (litres)")),
-                                                   column(2,
+                                                   column(2,div(class="right-align",
                                                           actionButton("annualf_consump_info", "Info",
                                                                        icon("lightbulb"),
-                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4")
+                                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"))
                                                    )
                                           ),
                                           fluidRow(verbatimTextOutput("annual_fuel_consump")
                                           )
                                    ),
-                                   column(width=3,
+                                   column(width=6,
                                           h4("Refuellings/HEMM/month"),
-                                          verbatimTextOutput("refuels_per_month")),
-                                   column(width=3,
-                                          h4("Refuellings/HEMM/year"),
-                                          verbatimTextOutput("refuels_per_year"))
+                                          verbatimTextOutput("refuels_per_month"))
                                  ),
-                          )
-                        ),
-                        fluidRow(
-                          column(width = 6,
-                                 column(width = 5,
-                                        fluidRow(
-                                          h3('Under Refueling and Over Reporting'),
-                                          # useShinyalert(),  # Set up shinyalert
-                                          actionButton("ur_info", "Info",
-                                                       icon("lightbulb"),
-                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                          numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 40),
-                                          numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 10),
-                                        ),
-                                        fluidRow(
-                                          tableOutput("underreported_calculations")
-                                        ),
-                                 ),
-                                 column(2,""),
-                                 column(width = 5,
-                                        fluidRow(
-                                          h3('HEMM Fuel Tank Theft'),
-                                          actionButton("theft_info","Info",
-                                                       icon("lightbulb"),
-                                                       style="color: #fff; background-color: #008000; border-color: #2e6da4"),
-                                          numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=40),
-                                          numericInput("bowser_theft_vol", "How many litres of fuel do you think is stolen each instance?", value = 1000),
-                                        ),
-                                        fluidRow(
-                                          tableOutput("stolen_assumption")
-                                        ),
-                                 )
+                                 fluidRow(column(width = 4,
+                                                 fluidRow(
+                                                   fluidRow(column(6,h3('Under Refueling')),
+                                                            # useShinyalert(),  # Set up shinyalert
+                                                            column(6,div(br(),actionButton("ur_info", "Info",
+                                                                                                               icon("lightbulb"),
+                                                                                                               style="color: #fff; background-color: #008000; border-color: #2e6da4")))),
+                                                   numericInput("ur_day_count", "How many over-reportings across all fleet do you think happen per day?", value = 70),
+                                                   numericInput("ur_day_vol", "How many litres is over reported each instance?", value = 1.5),
+                                                   tableOutput("underreported_calculations")
+                                                 )),
+                                          column(width = 4,
+                                                 fluidRow(
+                                                   fluidRow(column(6,h3('HEMM Fuel Tank Theft')),
+                                                            # useShinyalert(),  # Set up shinyalert
+                                                            column(6,div(br(),actionButton("theft_info","Info",
+                                                                                                               icon("lightbulb"),
+                                                                                                               style="color: #fff; background-color: #008000; border-color: #2e6da4")))),
+                                                   numericInput("tank_steals_monthly","How many thefts do you think happen from HEMM fuel tank/monthly?",value=40),
+                                                   numericInput("bowser_theft_vol", "How many litres of fuel do you think is stolen each instance?", value = 30),
+                                                   tableOutput("stolen_assumption")
+                                                 )),
+                                          column(width=4,plotlyOutput("pilferage_hist")))
                           ),
-                          column(width = 4,
-                                 fluidRow(plotlyOutput("pilferage_hist"))),
-                          column(2,fluidRow(
-                            h1("Fuel Savings:"),
-                            h3("Fuel Savings (Litres)"),
-                            verbatimTextOutput("pilferage_explanation"),
-                            h3("Fuel Savings (₹)"),
-                            verbatimTextOutput("pilferage_cost")))
-                        ),
-                      )
+                          column(3,
+                                 h4("Fuel Savings:"),
+                                 h5("Fuel Savings (Litres)"),
+                                 verbatimTextOutput("pilferage_explanation"),
+                                 h5("Fuel Savings (₹)"),
+                                 verbatimTextOutput("pilferage_cost"),
+                                 h4("How you can acheive savings with MindShift:"),
+                                 tags$ul(
+                                   tags$li(
+                                     h5("Real-Time Monitoring:"),
+                                     p("Continuous tracking of fuel levels and usage through IoT-enabled sensors and analytics platforms allows for real-time monitoring. Any irregularities can be flagged immediately, enabling prompt action.")
+                                   ),
+                                   tags$li(
+                                     h5("Predictive Analytics:"),
+                                     p("Mindshift Analytics can forecast potential pilferage scenarios based on historical data and usage trends. This proactive approach helps in identifying and mitigating risks before they result in significant losses.")
+                                   ),
+                                   tags$li(
+                                     h5("Detailed Reporting:"),
+                                     p("Comprehensive reporting tools provide detailed insights into fuel consumption patterns, helping in identifying specific areas or operations prone to pilferage.")
+                                   ),
+                                 )
+                                 )
+                        )
+                      ),
+                      bsModal("pilferage_info",title="Pilferage Information","pilferage_info_button",size="large",
+                              h4("Understanding Pilferage in Fuel Intensive Industries"),
+                              p("Pilferage refers to the theft or misappropriation of small quantities of goods or materials, which, in the context of industries utilizing large amounts of fuel daily, can aggregate into significant losses. This unauthorized siphoning off of fuel, though seemingly minor in isolated instances, can cumulatively impact operational efficiency and financial health."),
+                              tags$ul(
+                                tags$li(
+                                  h3("Financial Losses:"),
+                                  p("Unmonitored pilferage can lead to substantial financial losses over time. Even a small percentage of daily fuel usage, if stolen consistently, can result in a significant annual deficit.\n"),
+                                  p("For instance, in an industry consuming thousands of liters of fuel per day, a mere 1% pilferage can translate into thousands of dollars in losses annually.")
+                                ),
+                                tags$li(
+                                  h3("Operational Inefficiencies:"),
+                                  p("Fuel pilferage can disrupt the smooth operation of machinery and vehicles, leading to unanticipated downtime.\n"),
+                                  p("This can hamper productivity and increase maintenance costs due to inconsistent fuel availability.")
+                                ),
+                                tags$li(
+                                  h3("Inventory Discrepancies:"),
+                                  p("Regular pilferage creates discrepancies in fuel inventory records, complicating audits and inventory management processes."),
+                                  p("This can lead to further inefficiencies and potential inaccuracies in financial reporting.")
+                                ),
+                              )
+                              )
              ),
 
 
@@ -289,19 +242,21 @@ ui <- shinyUI(fluidPage(
              # IDLING Tab
 
              tabPanel("Idling",
-                      h1("Idling Metrics:"),
+                      fluidRow(column(9,h3("Monitoring Excessive Idling")),column(3,div(class="right-align",br(),actionButton("idling_info_button", "Info", icon = icon("info-circle"))))),
                       sidebarLayout(
-                        sidebarPanel(width=6,fluidRow(column(4,
-                                                             numericInput("idle_usage_per","% Machinery Utilisation",min=-10,max=100,value=60)),
-                                                      column(4,
-                                                             numericInput("idle_load_perc","% Time Loaded State",min=-10,max=100,value=70)),
-                                                      column(4,
-                                                             numericInput("idle_on_perc","% Time Idling State",min=-10,max=100,value=30))),
-                                     fluidRow(column(4,
-                                                     numericInput("idle_on_lph","Idling Lires/Hr",value=8)),
-                                              column(4,
-                                                     numericInput("idle_loaded_lph","Loaded Lires/Hr",value=16)),
-                                              column(4,numericInput("idle_mod_on_val","New Idling Hours",value=1))),
+                        sidebarPanel(width=6,fluidRow(column(6,
+                                                       numericInput("idle_usage_per","Effective utilization percentage?",min=-10,max=100,value=60)),
+                                                column(6,numericInput("idle_load_perc","Loaded state percentage during utilisation",min=-10,max=99,value=70))),
+                                     fluidRow(column(6,
+                                                     h5("Total Time in Consideration"),
+                                                     verbatimTextOutput("idle_total_time")),
+                                              column(6,
+                                                     h5("Idle time percentage during utilization"),
+                                                     verbatimTextOutput("idle_on_perc"))),
+                                     fluidRow(column(6,
+                                                     numericInput("idle_loaded_lph","Loaded State LPH",value=16)),
+                                              column(6,
+                                                     numericInput("idle_on_lph","Idling State LPH",value=8))),
                                      br(),
                                      fluidRow(column(8,plotlyOutput("idling_plot")),
                                               column(4,
@@ -311,46 +266,58 @@ ui <- shinyUI(fluidPage(
                                                                      However, after investing in MindShift Analytics,
                                                                      one gains the capability to meticulously track and mitigate idle durations,
                                                                      consequently reducing consumption metrics and enhancing operational efficiency.")))),
-                        mainPanel(width=6,fluidPage(fluidRow(column(4,
-                                                                    h5("Idling Hours"),
-                                                                    verbatimTextOutput("idle_idling_working_hours")),
-                                                             column(4,
-                                                                    h5("Loaded Hours"),
-                                                                    verbatimTextOutput("idle_loading_working_hours")),
-                                                             column(4,
-                                                                    h5("Off Hours"),
-                                                                    verbatimTextOutput("idle_off_working_hours"))),
-                                                    fluidRow(column(12,
-                                                                    h4("Current Consumption:"))),
-                                                    h5("Litres Consumed/Day/HEMM (Litres)"),
-                                                    verbatimTextOutput("idle_consump_lpd"),
-                                                    fluidRow(column(12,
-                                                                    h5("Litres Consumed/Day/All HEMM (Litres)"),
-                                                                    verbatimTextOutput("idle_all_consump_lpd"))),
-                                                    fluidRow(column(12,
-                                                                    h4("A possible scenario to increase savings:"),
-                                                                    p("Prolonged periods of idling during operational shifts result in escalated fuel consumption rates and diminished productivity levels.
-                                          This application facilitates clients in monitoring idle, loading, and off periods,
-                                          thereby enabling the optimization of productivity and the maximization of output yields.")
-                                                                    )
-                                                             ),
-                                                    fluidRow(column(12,
-                                                                    h4("New Consumption:"))),
-                                                    h5("New Litres Consumed/Day/HEMM (Litres)"),
-                                                    verbatimTextOutput("idle_mod_consump_lpd"),
-                                                    fluidRow(column(12,
-                                                                    h5("Litres Consumed/Day/All HEMM (Litres)"),
-                                                                    verbatimTextOutput("idle_mod_all_consump_lpd"))),
-                                                    fluidRow(column(6,
-                                                                    h5("Consumption Difference (Litres/Day/HEMM)"),
-                                                                    verbatimTextOutput("idle_lpd_diff")),
-                                                             column(6,
-                                                                    h5("% Difference"),
-                                                                    verbatimTextOutput("idle_lpd_diff_perc"))),
-
+                        mainPanel(width=6,fluidPage(column(8,fluidRow(column(6,h5("Total Utilisation Hours"),
+                                                                             verbatimTextOutput("idle_util_hours")),
+                                                                      column(6,h5("Total Off Hours"),
+                                                                             verbatimTextOutput("idle_off_hours"))),
+                                                           fluidRow(column(6,
+                                                                           h5("Current Idling Hours"),
+                                                                           verbatimTextOutput("idle_idling_working_hours")),
+                                                                    column(6,
+                                                                           h5("Current Loaded Hours"),
+                                                                           verbatimTextOutput("idle_loading_working_hours"))),
+                                                           fluidRow(column(8,h5("Meticulous tracking and mitigation of idle durations,
+                                                                                can consequently reduce consumption.")),
+                                                                    column(4,numericInput("idle_mod_on_val","Alter Idling Hours",value=1,min=0.1))),
+                                                           fluidRow(tableOutput("idle_comparision_table")
+                                                                    ),
+                                                           fluidRow(h5("Consumption DIfference per HEMM"),verbatimTextOutput("idle_single_diff"))
+                                                           ),
+                                                    column(4,fluidRow(column(12,h5("Yearly Savings:"),
+                                                                             verbatimTextOutput("idle_yearly_value"))),
+                                                           fluidRow(column(12,
+                                                                             h3("How you can achieve savings with MindShift:"),
+                                                                             p("A reduction of even 1 liter per HEMM in fuel consumption, when applied to all HEMM over 365 days, results in a substantial savings.")
+                                                                             )
+                                                                      )
+                                                           )
                                                     )
                                   )
-                        )
+                        ),
+                      bsModal("idle_info_modal", "Idling Information:", "idling_info_button", size = "large",
+                              tags$ul(
+                                tags$li(
+                                  h3("Shift Utilization Analysis:"),
+                                  p("During shifts, the machine operates for a certain percentage of the total time, while the remaining time is categorized as off time."),
+                                ),
+                                tags$li(
+                                  h3("Utilization Breakdown:"),
+                                  p("The utilization time is further divided into idle time and loaded time."),
+                                ),
+                                tags$li(
+                                  h3("Idle State:"),
+                                  p("In this state, the machine is not actively working but remains ready for operation, consuming fuel while idling.")
+                                ),
+                                tags$li(
+                                  h3("Loaded State:"),
+                                  p("In this state, the machine is actively working, consuming the maximum amount of fuel.")
+                                ),
+                                tags$li(
+                                  h3("Fuel Consumption Reduction"),
+                                  p("Reducing idle time by increasing off time can significantly decrease overall fuel consumption.")
+                                )
+                              )
+                      )
                       ),
 
 
@@ -396,7 +363,7 @@ ui <- shinyUI(fluidPage(
 
              tabPanel("Summary",
                       fluidPage(
-                        h1("Overall Summary"),
+                        h1("Overall Savings"),
                         plotlyOutput("summary_waterfall"),
                         br(),
                         h4("Description"),
@@ -409,9 +376,9 @@ ui <- shinyUI(fluidPage(
                                         fluidRow(
                                           h3("Manpower Section"),
                                           numericInput("correction_time","Time taken for erroneous entry correction",value=10),
-                                          numericInput("manpower_reduction_dispatcher","Predicted Reduction in Fuel Dispatchers:",value=1),
-                                          numericInput("manpower_reduction_logger","Predicted Reduction in Fuel Data Loggers:",value=4),
-                                          numericInput("manpower_reduction_dte","Predicted Reduction in Data Entry Operators:",value=2),
+                                          numericInput("manpower_reduction_dispatcher","Predicted Reduction in Fuel Dispatchers:",value=0),
+                                          numericInput("manpower_reduction_logger","Predicted Reduction in Fuel Data Loggers:",value=0),
+                                          numericInput("manpower_reduction_dte","Predicted Reduction in Data Entry Operators:",value=0),
                                           numericInput("manpower_reduction_accountant","Predicted Reduction in Accountants:",value=1)
                                         )
                         ),

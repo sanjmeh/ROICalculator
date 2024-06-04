@@ -181,13 +181,26 @@ server <- function(input, output, session) {
   format_indian <- function(x) {
     format_single <- function(y) {
       y <- as.character(y)
-      n <- nchar(y)
-      if (n > 3) {
-        last3 <- substr(y, n-2, n)
-        other <- substr(y, 1, n-3)
-        result <- paste0(gsub("(\\d)(?=(\\d{2})+$)", "\\1,", other, perl=TRUE), ",", last3)
+      if (grepl("\\.", y)) {
+        parts <- unlist(strsplit(y, "\\."))
+        int_part <- parts[1]
+        dec_part <- parts[2]
       } else {
-        result <- y
+        int_part <- y
+        dec_part <- NULL
+      }
+      n <- nchar(int_part)
+      if (n > 3) {
+        last3 <- substr(int_part, n-2, n)
+        other <- substr(int_part, 1, n-3)
+        formatted_int <- paste0(gsub("(\\d)(?=(\\d{2})+$)", "\\1,", other, perl=TRUE), ",", last3)
+      } else {
+        formatted_int <- int_part
+      }
+      if (!is.null(dec_part)) {
+        result <- paste0(formatted_int, ".", dec_part)
+      } else {
+        result <- formatted_int
       }
       return(result)
     }
@@ -198,6 +211,7 @@ server <- function(input, output, session) {
       format_single(x)
     }
   }
+
 
   updateTextOutput <- function(outputId, newText) {
     output[[outputId]] <- renderText({
@@ -214,16 +228,25 @@ server <- function(input, output, session) {
   # MANPOWER MENU BAR
 
   # setting pre calculated reduction values
-  observeEvent(c(input$error_margin,input$fuel_entry_count,input$truck_count,input$shift_count),{
+  observeEvent(c(input$error_margin,input$fuel_entry_count,input$truck_count,input$shift_count,input$logger_count_per_bowser),{
     predicted_red_dispatcher =  1
     predicted_red_logger = values()$count_of_loggers - 1
+    print(paste("inside main observe",values()$count_of_loggers - 1))
     predicted_red_dte = round(0.66 * values()$count_of_dataEntry ,0)
     predicted_red_accountant = 0.4 * values()$count_of_accountant
 
-    updateNumericInput(session, "manpower_reduction_dispatcher", value = predicted_red_dispatcher)
-    updateNumericInput(session, "manpower_reduction_logger", value = predicted_red_logger)
-    updateNumericInput(session, "manpower_reduction_dte", value = predicted_red_dte)
-    updateNumericInput(session, "manpower_reduction_accountant", value = predicted_red_accountant)
+    if(input$manpower_reduction_dispatcher == 0 && input$manpower_dispatch_q == TRUE){
+      updateNumericInput(session, "manpower_reduction_dispatcher", value = predicted_red_dispatcher)
+    }
+    if(input$manpower_reduction_logger == 0 && input$manpower_logger_q == TRUE){
+      updateNumericInput(session, "manpower_reduction_logger", value = predicted_red_logger)
+    }
+    if(input$manpower_reduction_dte == 0 && input$manpower_dte_q == TRUE){
+      updateNumericInput(session, "manpower_reduction_dte", value = predicted_red_dte)
+    }
+    if(input$manpower_reduction_accountant != 0){
+      updateNumericInput(session, "manpower_reduction_accountant", value = predicted_red_accountant)
+    }
   })
 
   # DISPATCHER CHECKING
@@ -257,7 +280,7 @@ server <- function(input, output, session) {
 
     if(input$manpower_dte_q){
       output$fuel_entry_count_check <- renderUI({
-        numericInput("fuel_entry_count", "Number of refuels-entries/all Hemm/day:",value = 200)
+        numericInput("fuel_entry_count", "Number of Entries per Day:",value = 200)
       })
 
       output$error_margin_check <- renderUI({
@@ -283,8 +306,12 @@ server <- function(input, output, session) {
       output$manpower_acc_check <- renderUI({
         NULL
       })
+
+      updateNumericInput(session,"manpower_reduction_dte",value = 0)
     }
   })
+
+  # fix accountant stuff
 
   # observe({
   #   predicted_red_dispatcher =  1
@@ -383,10 +410,10 @@ server <- function(input, output, session) {
         format_indian(cost.df()$Saved[2]),
         format_indian(cost.df()$Saved[3]),
         format_indian(cost.df()$Saved[4]),
-        format_indian(sum(cost.df()$Saved[1],
+        format_indian(round(sum(cost.df()$Saved[1],
                           cost.df()$Saved[2],
                           cost.df()$Saved[3],
-                          cost.df()$Saved[4]))
+                          cost.df()$Saved[4]),2))
       )
     )
 
@@ -496,20 +523,20 @@ server <- function(input, output, session) {
 
   output$histogram <- renderPlotly({
 
-    # orig_explanation <- c(
-    #   paste("Current Cost: <b>₹",format_indian(values()$dipatcher_total_cost),"/-</b> of <b>Fuel Dispatcher</b>"), #Dispatcher
-    #   paste("Current Cost: <b>₹",format_indian(values()$logger_total_cost),"/-</b> of <b>Fuel Data loggers</b>"), #Loggers
-    #   paste("Current Cost: <b>₹",format_indian(values()$dto_total_cost),"/-</b> of <b>Data Entry operators</b>"), #DTE
-    #   paste("Current Cost: <b>₹",format_indian(values()$accountant_total_cost),"/-</b> of <b>Accountants</b>") #Accountant
-    # )
-    #
-    # saved_explanation <- c(
-    #
-    #   paste("With a predicted reduction of",input$manpower_reduction_dispatcher," in <b>Dispatchers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Dispatcher
-    #   paste("With a predicted reduction of",input$manpower_reduction_logger," in <b>Fuel Data Loggers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[2]),"/-</b>"), #Logger
-    #   paste("With a predicted reduction of",input$manpower_reduction_dte," in <b>Data Entry Operators<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[3]),"/-</b>"), #Data Entry Operator
-    #   paste("With a predicted reduction of",input$manpower_reduction_accountant," in <b>Accountants<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[4]),"/-</b>") #Accountant
-    # )
+    orig_explanation <- c(
+      paste("Current Cost: <b>₹",format_indian(values()$dipatcher_total_cost),"/-</b> of <b>Fuel Dispatcher</b>"), #Dispatcher
+      paste("Current Cost: <b>₹",format_indian(values()$logger_total_cost),"/-</b> of <b>Fuel Data loggers</b>"), #Loggers
+      paste("Current Cost: <b>₹",format_indian(values()$dto_total_cost),"/-</b> of <b>Data Entry operators</b>"), #DTE
+      paste("Current Cost: <b>₹",format_indian(values()$accountant_total_cost),"/-</b> of <b>Accountants</b>") #Accountant
+    )
+
+    saved_explanation <- c(
+
+      paste("With a predicted reduction of",input$manpower_reduction_dispatcher," in <b>Dispatchers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Dispatcher
+      paste("With a predicted reduction of",input$manpower_reduction_logger," in <b>Fuel Data Loggers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[2]),"/-</b>"), #Logger
+      paste("With a predicted reduction of",input$manpower_reduction_dte," in <b>Data Entry Operators<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[3]),"/-</b>"), #Data Entry Operator
+      paste("With a predicted reduction of",input$manpower_reduction_accountant," in <b>Accountants<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[4]),"/-</b>") #Accountant
+    )
 
     data <- data.frame(cost.df()$Titles, cost.df()$Cost, cost.df()$Saved)
     colnames(data) <- c("Category","Metrics","saved_value")
@@ -517,8 +544,8 @@ server <- function(input, output, session) {
     middle_pos = cost.df()$Saved/2
 
     gg <- ggplot(data) +
-      geom_bar(aes(x = Category, y = Metrics, fill="original",text=paste("₹",format_indian(Metrics))), stat = "identity", position="dodge") +
-      geom_bar(aes(x = Category, y = saved_value, fill="saved",text=paste("₹",format_indian(saved_value))), stat = "identity", position="dodge") +
+      geom_bar(aes(x = Category, y = Metrics, fill="original",text=orig_explanation), stat = "identity", position="dodge") +
+      geom_bar(aes(x = Category, y = saved_value, fill="saved",text=saved_explanation), stat = "identity", position="dodge") +
       geom_text(aes(x = Category, y = middle_pos, label = paste("₹",format_indian(saved_value))), vjust = 0, size = 4,color="white") +
       geom_text(aes(x= Category, y = cost.df()$Cost/2, label = paste("₹",format_indian(Metrics))), vjust=0, size = 3.5,color="white") +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
@@ -531,17 +558,6 @@ server <- function(input, output, session) {
     return(p_plotly)
   })
 
-
-
-
-  output$pieChart <- renderPlot({
-    ggplot(cost.df(), aes(x = "", y = Cost, fill = Titles)) +
-      geom_bar(width = 1, stat = "identity") +
-      coord_polar(theta = "y") +
-      scale_fill_manual(values = c('#FF9999', '#66B3FF', '#99FF99', '#FFCC99')) +
-      theme_void()
-  })
-
   output$manpower_summation_current <- renderText({
     paste("₹",format_indian(values()$logger_total_cost + values()$dto_total_cost + values()$dipatcher_total_cost + values()$accountant_total_cost))
   })
@@ -549,8 +565,22 @@ server <- function(input, output, session) {
     paste("₹",format_indian(cost.df()$Saved[1] + cost.df()$Saved[2] + cost.df()$Saved[3] + cost.df()$Saved[4]))
   })
   output$manpower_fte_total <- renderText({
-    format_indian(values()$count_of_dataEntry + values()$count_of_loggers + input$coordinator_count + input$accountant_count)
+    format_indian(values()$count_of_dataEntry + values()$count_of_loggers + input$coordinator_count )
   })
+  output$manpower_pte_total <- renderText({
+    values()$count_of_accountant
+  })
+
+
+
+  # output$pieChart <- renderPlot({
+  #   ggplot(cost.df(), aes(x = "", y = Cost, fill = Titles)) +
+  #     geom_bar(width = 1, stat = "identity") +
+  #     coord_polar(theta = "y") +
+  #     scale_fill_manual(values = c('#FF9999', '#66B3FF', '#99FF99', '#FFCC99')) +
+  #     theme_void()
+  # })
+  #
 
 
 
@@ -575,7 +605,7 @@ server <- function(input, output, session) {
 
   # info modals using shinyalert
   observeEvent(input$ur_info, {
-    shinyalert("Over and Under reporting", "Alleged collusion between a diesel bowser driver and fuel supplier results in discrepancies between fuel input records and actual amounts.\n
+    shinyalert("Under Refueling", "Alleged collusion between a diesel bowser driver and fuel supplier results in discrepancies between fuel input records and actual amounts.\n
                Falsified records and the misappropriation of 20 liters of fuel for offsite sale.", type = "info")
   })
   observeEvent(input$theft_info, {
@@ -593,7 +623,7 @@ server <- function(input, output, session) {
 
     data.frame(
       Field = c("Daily over reported volume across fleet","Yearly figure","Percentage of Yearly consumption"),
-      Values = c(pilferage_values()$ur_daily_vol, pilferage_values()$under_reporting_yearly, pilferage_percent)
+      Values = c(format_indian(pilferage_values()$ur_daily_vol), format_indian(pilferage_values()$under_reporting_yearly), round(pilferage_percent,2))
     )
   })
 
@@ -602,7 +632,7 @@ server <- function(input, output, session) {
 
     data.frame(
       Field = c("Yearly figure","Percentage of Yearly consumption"),
-      Values = c(pilferage_values()$bowser_fuel_sold_yearly, pilferage_percent)
+      Values = c(format_indian(pilferage_values()$bowser_fuel_sold_yearly), round(pilferage_percent,2))
     )
   })
 
@@ -655,7 +685,7 @@ server <- function(input, output, session) {
   })
 
   output$pilferage_cost <- renderText({
-    format_indian(pilferage_values()$vol_saved_yearly * 86)
+    paste("₹",format_indian(pilferage_values()$vol_saved_yearly * 86))
   })
 
 
@@ -665,33 +695,45 @@ server <- function(input, output, session) {
   idle_total <- reactive({
     #checking input to prevent crashes
     req(!is.null(input$idle_load_perc), input$idle_load_perc != 0)
-    req(!is.null(input$idle_on_perc), input$idle_on_perc != 0)
-    # req(!is.null(input$idle_mod_off_val), input$idle_mod_off_val != 0)
     req(!is.null(input$idle_mod_on_val), input$idle_mod_on_val != 0)
 
 
-    on_load_sum = sum(c(input$idle_load_perc, input$idle_on_perc))
+
     off_perc = 100 - input$idle_usage_per
-    total_perc = on_load_sum + off_perc
+
 
     total_hours = input$shift_count * 8
-    working_hours = round(total_hours * input$idle_usage_per/100,0)
+    working_hours = round(total_hours * input$idle_usage_per/100,1)
 
-    idle_idling_working_hours = round(working_hours * input$idle_on_perc/100,0)
-    idle_loading_working_hours = round(working_hours * input$idle_load_perc/100,0)
+    idle_on_perc = 100 - input$idle_load_perc
+
+
+    idle_idling_working_hours = round(working_hours * idle_on_perc/100,1)
+    idle_loading_working_hours = round(working_hours * input$idle_load_perc/100,1)
     idle_off_working_hours = total_hours - working_hours
 
+
+    # Overall consumption of fuel of single HEMM
     idling_ldp = idle_idling_working_hours * input$idle_on_lph + idle_loading_working_hours * input$idle_loaded_lph
+    # Overall consumption of fuel of all HEMM
     idling_all_ldp = idling_ldp * input$hemm_count
 
     mod_idle_hours_consump = input$idle_mod_on_val * input$idle_on_lph
 
+    # Overall modified consumption of fuel of single HEMM
     idle_mod_consump_lpd = idling_ldp - idle_idling_working_hours * input$idle_on_lph + mod_idle_hours_consump
+    # Overall modified consumption of fuel of all HEMM
     idle_mod_all_consump_lpd = idle_mod_consump_lpd * input$hemm_count
 
+    diff_value = (idling_ldp - idle_mod_consump_lpd)*input$hemm_count * 365 * 86
+
+    # Difference in overall fuel consumption of a single HEMM
+    idle_single_diff = idling_ldp - idle_mod_consump_lpd
+
     data.frame(
-      on_load_sum = on_load_sum,
+      # on_load_sum = on_load_sum,
       off_perc = off_perc,
+      idle_on_perc = idle_on_perc,
 
       total_hours = total_hours,
 
@@ -701,64 +743,140 @@ server <- function(input, output, session) {
       idle_off_working_hours = idle_off_working_hours,
 
       idling_ldp = idling_ldp,
-      idling_all_ldp = idling_all_ldp,
       idle_mod_consump_lpd = idle_mod_consump_lpd,
-      idle_mod_all_consump_lpd = idle_mod_all_consump_lpd
+      idling_all_ldp = idling_all_ldp,
+      idle_mod_all_consump_lpd = idle_mod_all_consump_lpd,
+
+      diff_value = diff_value,
+      idle_single_diff = idle_single_diff
     )
   })
 
+  output$idle_total_time <- renderText({
+    paste(idle_total()$total_hours,"hours")
+  })
+  output$idle_on_perc <- renderText({
+    idle_total()$idle_on_perc
+  })
+  output$idle_util_hours <- renderText({
+    idle_total()$working_hours
+  })
+  output$idle_off_hours <- renderText({
+    idle_total()$idle_off_working_hours
+  })
 
-  # New Hours input check and dynamic update
-  observeEvent(input$idle_mod_on_val, {
-
-    # # check for: 1.sum of old and new value stays same 2.neither value gets to 0
-    # if(original_sum != new_sum || updated_val == 0 || input$idle_mod_on_val == 0){
-    #   updated_val = idle_total()$idle_off_working_hours
-    #   updateNumericInput(session, "idle_mod_on_val", value = idle_total()$idle_idling_working_hours)
-    # } else {
-    #   updateTextOutput("idle_mod_off_val", updated_val)
-    # }
-
-    updated_off_val = idle_total()$total_hours - input$idle_mod_on_val - idle_total()$idle_loading_working_hours
-
-    original_on_off_sum = idle_total()$idle_idling_working_hours + idle_total()$idle_off_working_hours
-    updated_on_off_sum = input$idle_mod_on_val + updated_off_val
-
-    if(original_on_off_sum != updated_on_off_sum || updated_off_val == 0 || input$idle_mod_on_val == 0){
-      updated_off_val = idle_total()$idle_off_working_hours
-      updateNumericInput(session, "idle_mod_on_val", value = idle_total()$idle_idling_working_hours)
-    }else{
-      updateTextOutput("idle_mod_off_val",updated_off_val)
+  observeEvent(input$idle_mod_on_val,{
+    if(input$idle_mod_on_val >= idle_total()$idle_idling_working_hours || input$idle_mod_on_val <= 0){
+      rechcked_idle_val = idle_total()$idle_idling_working_hours - 0.5
+      updateNumericInput(session,"idle_mod_on_val",value=rechcked_idle_val)
     }
   })
 
-  # Current State Percentage input check to prevent unexpected
-  observe({
-    # Idling and Loading Percentage Check:
+  output$idle_comparision_table <- render_gt({
+    perc_val = (idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd)/idle_total()$idling_ldp
+    perc_val = perc_val * 100
 
-    on_load_sum <- idle_total()$on_load_sum
+    idle_lpd_diff_perc = paste(round(perc_val,2),"%")
 
-    # idle+load+offtime = total_hours
-    if (100 - on_load_sum > 0) {
-      updateTextInput(session, "idle_load_perc", label = "% Time Loaded State")
-      updateTextInput(session, "idle_on_perc", label = "% Time Idling State")
-    } else {
-      updateTextInput(session, "idle_load_perc", value = 70)
-      updateTextInput(session, "idle_on_perc", value = 30)
-    }
+    idle_consump_single_diff = round(idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd,2)
 
+    field_data <- data.frame(
+      Metrics = c(
+        "Litres Consumed/Day/HEMM (Litres)",
+        "Litres Consumed/Day/All HEMM (Litres)",
+        "Difference"
+      ),
+      current_Consumption = c(
+        format_indian(idle_total()$idling_ldp),
+        format_indian(idle_total()$idling_all_ldp),
+        idle_consump_single_diff
+      ),
+      new_Consumption = c(
+        format_indian(idle_total()$idle_mod_consump_lpd),
+        format_indian(idle_total()$idle_mod_all_consump_lpd),
+        idle_lpd_diff_perc
+      )
+    )
+
+    # Create the gt table with customization
+    gt(field_data) %>%
+      tab_header(
+        title = md("Consumption Comparisions"),
+        subtitle = md("A tabulation of consumption change by `MindShift` impact")
+      ) %>%
+      cols_label(
+        Metrics = "Metrics",
+        current_Consumption = "Current LPH",
+        new_Consumption = "Reduced LPH"
+      ) %>%
+
+      # adding styling to cells and borders
+      tab_style(
+        style = list(
+          cell_text(weight = "bold")
+        ),
+        locations = cells_column_labels(everything())
+      ) %>%
+      tab_style(
+        style = cell_borders(
+          sides = "right",
+          color = "gray",
+          weight = px(1)
+        ),
+        locations = cells_body(columns = everything())
+      ) %>%
+      tab_style(
+        style = cell_borders(
+          sides = "left",
+          color = "gray",
+          weight = px(1)
+        ),
+        locations = cells_body(columns = everything())
+      ) %>%
+      tab_style(
+        style = cell_borders(
+          sides = "right",
+          color = "gray",
+          weight = px(1)
+        ),
+        locations = cells_column_labels(everything())
+      ) %>%
+      tab_style(
+        style = cell_borders(
+          sides = "left",
+          color = "gray",
+          weight = px(1)
+        ),
+        locations = cells_column_labels(everything())
+      ) %>%
+      tab_style(
+        style = list(
+          cell_fill(color = "pink")
+        ),
+        locations = cells_body(
+          columns = vars(current_Consumption),
+          rows = c(3)
+        )
+      ) %>%
+      tab_style(
+        style = list(
+          cell_fill(color = "pink")
+        ),
+        locations = cells_body(
+          columns = vars(new_Consumption),
+          rows = c(3)
+        )
+      ) %>%
+      tab_style(
+        style = list(
+          cell_text(weight = "bold")
+        ),
+        locations = cells_body(everything())
+      )
   })
-
 
   output$idle_off_perc <- renderText({
     idle_total()$off_perc
-  })
-
-  output$idle_consump_lpd <- renderText({
-    format_indian(idle_total()$idling_ldp)
-  })
-  output$idle_all_consump_lpd <- renderText({
-    format_indian(idle_total()$idling_all_ldp)
   })
 
   output$idle_idling_working_hours <- renderText({
@@ -771,20 +889,11 @@ server <- function(input, output, session) {
     idle_total()$idle_off_working_hours
   })
 
-  output$idle_mod_consump_lpd <- renderText({
-    format_indian(idle_total()$idle_mod_consump_lpd)
+  output$idle_yearly_value <- renderText({
+    paste("₹",format_indian(round(idle_total()$diff_value,2)))
   })
-  output$idle_mod_all_consump_lpd <- renderText({
-    format_indian(idle_total()$idle_mod_all_consump_lpd)
-  })
-
-  output$idle_lpd_diff <- renderText({
-    idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd
-  })
-  output$idle_lpd_diff_perc <- renderText({
-    perc_val = (idle_total()$idling_ldp - idle_total()$idle_mod_consump_lpd)/idle_total()$idling_ldp
-    perc_val = perc_val * 100
-    return(perc_val)
+  output$idle_single_diff <- renderText({
+    idle_total()$idle_single_diff
   })
 
   # output$idling_plot <- renderPlotly({
