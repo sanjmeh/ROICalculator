@@ -95,7 +95,7 @@ ui <- shinyUI(fluidPage(
                                                   choices = c("Yes" = TRUE, "No" = FALSE),
                                                   inline = TRUE),
                                      numericInput("coordinator_count"," Fuel Dispatchers/Shift",value=2),
-                                     radioButtons("manpower_logger_q","Do you have Fuel Data Loggers for logging on-site fuel transactions?",
+                                     radioButtons("manpower_logger_q","Do you have Fuel Loggers for logging on-site fuel transactions?",
                                                   choices = c("Yes" = TRUE, "No" = FALSE),
                                                   inline = TRUE),
                                      uiOutput("manpower_logger_check"),

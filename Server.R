@@ -122,9 +122,9 @@ server <- function(input, output, session) {
 
     data.frame(
       Titles = c(
-        "Fuel Dispatch Coordinator",
-        "Fuel logger",
-        "Data entry operator",
+        "Fuel Dispatcher",
+        "Fuel Logger",
+        "Data Entry Operator",
         "Accountant"
       ),
       Cost = c(
@@ -567,7 +567,7 @@ server <- function(input, output, session) {
 
     saved_explanation <- c(
 
-      paste("With a predicted reduction of",input$manpower_reduction_dispatcher," in <b>Dispatchers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Dispatcher
+      paste("With a predicted reduction of",input$manpower_reduction_dispatcher," in <b>Fuel Dispatchers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[1]),"/-</b>"), #Dispatcher
       paste("With a predicted reduction of",input$manpower_reduction_logger," in <b>Fuel Data Loggers<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[2]),"/-</b>"), #Logger
       paste("With a predicted reduction of",input$manpower_reduction_dte," in <b>Data Entry Operators<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[3]),"/-</b>"), #Data Entry Operator
       paste("With a predicted reduction of",input$manpower_reduction_accountant," in <b>Accountants<b>, Updated Cost is: <b>₹",format_indian(cost.df()$Saved[4]),"/-</b>") #Accountant
