@@ -23,11 +23,47 @@ ui <- shinyUI(fluidPage(
       }
       .right-align {
       float: right;
-    }
+      }
+      .title_container {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-top: 20px;
+          background: linear-gradient(to right, #f58220, #2a52be);
+          border-radius: 15px;
+          box-shadow: 0 0 30px 15px rgba(255, 255, 255, 0.8);
+          position: relative;
+          z-index: 1;
+      }
+      .title_container::before{
+          content: '';
+          position: absolute;
+          top: -20px;
+          left: -20px;
+          right: -20px;
+          bottom: -20px;
+          background: inherit;
+          z-index: -1;
+          filter: blur(8px);
+          border-radius: inherit;
+      }
+      .logo {
+          max-width: 250px;
+          height: auto;
+      }
+
+      .heading {
+          font-size: 24px;
+          margin: 0;
+      }
     "))
   ),
 
-  titlePanel("Return Of Investment Calculator"),
+  div(class="title_container",
+      div(class="heading",titlePanel("Return Of Investment Calculator")),
+      div(
+        img(src = "new_logo.png", class = "logo")
+      )),
 
 
   h2("Universal Values"),
