@@ -9,8 +9,18 @@ options(scipen = 999)
 
 server <- function(input, output, session) {
 
-  # values-reactive Values relevant across all calculations put in a reactive for easier access
+  acc <- reactiveValues(
+    count_of_accountant = 0
+  )
 
+  observeEvent(input$fuel_entry_count,{
+    count_of_accountant <- round(((input$fuel_entry_count * 0.3 * 10) / 60 + (10 * 6 * 12)) / 6 / 281, 2)
+    acc$count_of_accountant <- count_of_accountant
+    print(count_of_accountant)
+    print(input$fuel_entry_count*0.3*10)
+  })
+
+  # values-reactive Values relevant across all calculations put in a reactive for easier access
   values <- reactive({
     # these variables are out since they are being used for calculation in data frame
     # data frame scope prevents creation and usage in the same scope hence outside creation
@@ -30,15 +40,20 @@ server <- function(input, output, session) {
     count_of_dataEntry = round((correct_entries * 3) / 60 / 5 / working_days, digits = 0) +
       round((error_entries * input$correction_time) / 60 / 5 / working_days, digits = 0)
 
-    # (hours spent in correction + hours spent in compilation)/6hr[day] = numerber of days
-    # number of days / 281[working days]
-    count_of_accountant = round(( ( (req(input$fuel_entry_count) * 0.3 * 10)/60 + (10*6*12) )/6 )/281,2)
+    correction_hours = (req(input$fuel_entry_count) * 0.3 * 10)/60 #time spent in correction
+    compilation_hours = ((10*6*12) )/6 #time spent in compilation
+
+    if(correction_hours == 0){
+      compilation_hours = 0
+    }
+
+    count_of_accountant = round( (  correction_hours + compilation_hours )/281, 2)
 
     logger_total_cost = input$fuel_logger_cost * count_of_loggers
 
     dipatcher_total_cost = input$coordinator_count * input$fuel_dispatcher_cost
     dto_total_cost = input$data_entry_cost * count_of_dataEntry
-    accountant_total_cost = count_of_accountant * input$accountant_cost
+    accountant_total_cost = (count_of_accountant * input$accountant_cost)
 
     data.frame(
       entries_per_year = entries_per_year,
@@ -103,7 +118,7 @@ server <- function(input, output, session) {
     saving_dispatcher <- values()$dipatcher_total_cost - dispatcher_reduced_cost
     saving_logger <- values()$logger_total_cost - logger_reduced_cost
     saving_dto <- values()$dto_total_cost - dto_reduced_cost
-    saving_accountant <- values()$accountant_total_cost - 1
+    saving_accountant <- (values()$accountant_total_cost - input$manpower_reduction_accountant*input$accountant_cost)
 
     data.frame(
       Titles = c(
@@ -231,7 +246,7 @@ server <- function(input, output, session) {
   observeEvent(c(input$error_margin,input$fuel_entry_count,input$truck_count,input$shift_count,input$logger_count_per_bowser),{
     predicted_red_dispatcher =  1
     predicted_red_logger = values()$count_of_loggers - 1
-    print(paste("inside main observe",values()$count_of_loggers - 1))
+    # print(paste("inside main observe",values()$count_of_loggers - 1))
     predicted_red_dte = round(0.66 * values()$count_of_dataEntry ,0)
     predicted_red_accountant = 0.4 * values()$count_of_accountant
 
@@ -244,7 +259,7 @@ server <- function(input, output, session) {
     if(input$manpower_reduction_dte == 0 && input$manpower_dte_q == TRUE){
       updateNumericInput(session, "manpower_reduction_dte", value = predicted_red_dte)
     }
-    if(input$manpower_reduction_accountant != 0){
+    if(input$manpower_reduction_accountant != 0 && input$manpower_acc_q == TRUE){
       updateNumericInput(session, "manpower_reduction_accountant", value = predicted_red_accountant)
     }
   })
@@ -290,8 +305,13 @@ server <- function(input, output, session) {
       output$manpower_acc_check <- renderUI({
         radioButtons("manpower_acc_q","Do you have Accountants for operation hour and fuel data compilation?",
                      choices = c("Yes" = TRUE, "No" = FALSE),
-                     inline = TRUE)
+                     inline = TRUE,
+                     selected = TRUE)
       })
+
+      updateSliderInput(session,"accountant_cost",value=500000)
+      predicted_red_accountant = 0.4 * values()$count_of_accountant
+      updateNumericInput(session,"manpower_reduction_dte",value = predicted_red_accountant)
 
     } else {
       output$fuel_entry_count_check <- renderUI({
@@ -308,8 +328,23 @@ server <- function(input, output, session) {
       })
 
       updateNumericInput(session,"manpower_reduction_dte",value = 0)
+
+      output$manpower_acc_check <- renderUI({
+        radioButtons("manpower_acc_q","Do you have Accountants for operation hour and fuel data compilation?",
+                     choices = c("Yes" = TRUE, "No" = FALSE),
+                     inline = TRUE,
+                     selected = FALSE)
+      })
+
+      updateSliderInput(session,"accountant_cost",value=0)
+      print(paste("false",values()$accountant_total_cost))
+      print(paste("false",values()$count_of_accountant," cost val",input$accountant_cost))
     }
   })
+
+  # observeEvent("accountant_cost",{
+  #   values()
+  # })
 
   # fix accountant stuff
 
@@ -547,7 +582,7 @@ server <- function(input, output, session) {
       geom_bar(aes(x = Category, y = Metrics, fill="original",text=orig_explanation), stat = "identity", position="dodge") +
       geom_bar(aes(x = Category, y = saved_value, fill="saved",text=saved_explanation), stat = "identity", position="dodge") +
       geom_text(aes(x = Category, y = middle_pos, label = paste("₹",format_indian(saved_value))), vjust = 0, size = 4,color="white") +
-      geom_text(aes(x= Category, y = cost.df()$Cost/2, label = paste("₹",format_indian(Metrics))), vjust=0, size = 3.5,color="white") +
+      geom_text(aes(x= Category, y = 0.8*cost.df()$Cost, label = paste("₹",format_indian(Metrics))), vjust=0, size = 3.5,color="white") +
       scale_fill_manual(values = c("original" = "blue", "saved" = "orange")) +
       labs(fill = "Saving Comparisions") +
       theme(legend.position = "none")
