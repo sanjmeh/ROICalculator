@@ -418,17 +418,17 @@ ui <- shinyUI(fluidPage(
                                           numericInput("manpower_reduction_accountant","Predicted Reduction in Accountants:",value=1)
                                         )
                         ),
-                        column(4,
-                               fluidRow(
-                                 h3("Pilferage Section"),
-                                 # numericInput("idle_off","Off duty cycle",value=20)
-                               )
-                        ),
-                        column(4,
-                               fluidRow(
-                                 h3("Movement Section"),
-                                 # p("add assumptions here")
-                               ))
+                        # column(4,
+                        #        fluidRow(
+                        #          h3("Pilferage Section"),
+                        #          # numericInput("idle_off","Off duty cycle",value=20)
+                        #        )
+                        # ),
+                        # column(4,
+                        #        fluidRow(
+                        #          h3("Movement Section"),
+                        #          # p("add assumptions here")
+                        #        ))
                         )
                       )
              ),
