@@ -99,7 +99,7 @@ ui <- shinyUI(fluidPage(
                                                   choices = c("Yes" = TRUE, "No" = FALSE),
                                                   inline = TRUE),
                                      uiOutput("manpower_logger_check"),
-                                     radioButtons("manpower_dte_q","Do you have Data Entry Operators for manual backend updation?",
+                                     radioButtons("manpower_dte_q","Do you have Data Entry Operators and Accountants for manual backend updation?",
                                                   choices = c("Yes" = TRUE, "No" = FALSE),
                                                   inline = TRUE,
                                                   selected = TRUE),
@@ -413,7 +413,7 @@ ui <- shinyUI(fluidPage(
                                           h3("Manpower Section"),
                                           numericInput("correction_time","Time taken for erroneous entry correction",value=10),
                                           numericInput("manpower_reduction_dispatcher","Predicted Reduction in Fuel Dispatchers:",value=0),
-                                          numericInput("manpower_reduction_logger","Predicted Reduction in Fuel Data Loggers:",value=0),
+                                          numericInput("manpower_reduction_logger","Predicted Reduction in Fuel Loggers:",value=0),
                                           numericInput("manpower_reduction_dte","Predicted Reduction in Data Entry Operators:",value=0),
                                           numericInput("manpower_reduction_accountant","Predicted Reduction in Accountants:",value=1)
                                         )

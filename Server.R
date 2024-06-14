@@ -40,6 +40,7 @@ server <- function(input, output, session) {
     count_of_dataEntry = round((correct_entries * 3) / 60 / 5 / working_days, digits = 0) +
       round((error_entries * input$correction_time) / 60 / 5 / working_days, digits = 0)
 
+    # correction and compilation hours are being considered for accountant calculation
     correction_hours = (req(input$fuel_entry_count) * 0.3 * 10)/60 #time spent in correction
     compilation_hours = ((10*6*12) )/6 #time spent in compilation
 
@@ -53,6 +54,10 @@ server <- function(input, output, session) {
 
     dipatcher_total_cost = input$coordinator_count * input$fuel_dispatcher_cost
     dto_total_cost = input$data_entry_cost * count_of_dataEntry
+    if(input$accountant_cost == 0 && input$manpower_reduction_accountant == 0){
+      count_of_accountant = 0
+
+    }
     accountant_total_cost = (count_of_accountant * input$accountant_cost)
 
     data.frame(
@@ -243,10 +248,9 @@ server <- function(input, output, session) {
   # MANPOWER MENU BAR
 
   # setting pre calculated reduction values
-  observeEvent(c(input$error_margin,input$fuel_entry_count,input$truck_count,input$shift_count,input$logger_count_per_bowser),{
+  observeEvent(c(input$error_margin,input$fuel_entry_count,input$truck_count,input$shift_count),{
     predicted_red_dispatcher =  1
     predicted_red_logger = values()$count_of_loggers - 1
-    # print(paste("inside main observe",values()$count_of_loggers - 1))
     predicted_red_dte = round(0.66 * values()$count_of_dataEntry ,0)
     predicted_red_accountant = 0.4 * values()$count_of_accountant
 
@@ -254,13 +258,22 @@ server <- function(input, output, session) {
       updateNumericInput(session, "manpower_reduction_dispatcher", value = predicted_red_dispatcher)
     }
     if(input$manpower_reduction_logger == 0 && input$manpower_logger_q == TRUE){
+      print("going inside if")
       updateNumericInput(session, "manpower_reduction_logger", value = predicted_red_logger)
     }
     if(input$manpower_reduction_dte == 0 && input$manpower_dte_q == TRUE){
       updateNumericInput(session, "manpower_reduction_dte", value = predicted_red_dte)
-    }
-    if(input$manpower_reduction_accountant != 0 && input$manpower_acc_q == TRUE){
       updateNumericInput(session, "manpower_reduction_accountant", value = predicted_red_accountant)
+    }
+    # if(input$manpower_reduction_accountant != 0 && input$manpower_acc_q == TRUE){
+    # }
+  })
+
+  # this is for updating the values of reduced logger once changes are made to logger count
+  observeEvent(input$logger_count_per_bowser,{
+    predicted_red_logger = values()$count_of_loggers - 1
+    if(input$manpower_logger_q != FALSE){
+      updateNumericInput(session, "manpower_reduction_logger", value = predicted_red_logger)
     }
   })
 
@@ -302,16 +315,21 @@ server <- function(input, output, session) {
         numericInput("error_margin", "% Erroneous Entries",value = 5)
       })
 
+      # output$manpower_acc_check <- renderUI({
+      #   radioButtons("manpower_acc_q","Do you have Accountants for operation hour and fuel data compilation?",
+      #                choices = c("Yes" = TRUE, "No" = FALSE),
+      #                inline = TRUE,
+      #                selected = TRUE)
+      # })
       output$manpower_acc_check <- renderUI({
-        radioButtons("manpower_acc_q","Do you have Accountants for operation hour and fuel data compilation?",
-                     choices = c("Yes" = TRUE, "No" = FALSE),
-                     inline = TRUE,
-                     selected = TRUE)
+        NULL
       })
 
       updateSliderInput(session,"accountant_cost",value=500000)
       predicted_red_accountant = 0.4 * values()$count_of_accountant
-      updateNumericInput(session,"manpower_reduction_dte",value = predicted_red_accountant)
+      predicted_red_dte = round(0.66 * values()$count_of_dataEntry ,0)
+      updateNumericInput(session,"manpower_reduction_accountant",value = predicted_red_accountant)
+      updateNumericInput(session,"manpower_reduction_dte",value = predicted_red_dte)
 
     } else {
       output$fuel_entry_count_check <- renderUI({
@@ -319,7 +337,6 @@ server <- function(input, output, session) {
       })
 
       output$error_margin_check <- renderUI({
-        # numericInput("error_margin", "% Erroneous Entries",value = 0)
         NULL
       })
 
@@ -329,24 +346,35 @@ server <- function(input, output, session) {
 
       updateNumericInput(session,"manpower_reduction_dte",value = 0)
 
+      # output$manpower_acc_check <- renderUI({
+      #   radioButtons("manpower_acc_q","Do you have Accountants for operation hour and fuel data compilation?",
+      #                choices = c("Yes" = TRUE, "No" = FALSE),
+      #                inline = TRUE,
+      #                selected = FALSE)
+      # })
+
       output$manpower_acc_check <- renderUI({
-        radioButtons("manpower_acc_q","Do you have Accountants for operation hour and fuel data compilation?",
-                     choices = c("Yes" = TRUE, "No" = FALSE),
-                     inline = TRUE,
-                     selected = FALSE)
+        NULL
       })
 
+      updateNumericInput(session,"manpower_reduction_accountant",value = 0)
       updateSliderInput(session,"accountant_cost",value=0)
-      print(paste("false",values()$accountant_total_cost))
-      print(paste("false",values()$count_of_accountant," cost val",input$accountant_cost))
     }
   })
 
-  # observeEvent("accountant_cost",{
-  #   values()
+  # observeEvent(input$manpower_acc_q, {
+  #   # For the case when dte is required but acc not required
+  #   if(input$manpower_acc_q == FALSE && input$manpower_dte_q == TRUE){
+  #     updateSliderInput(session,"accountant_cost",value=0)
+  #     updateNumericInput(session,"manpower_reduction_accountant",value = 0)
+  #   }else{
+  #     updateSliderInput(session,"accountant_cost",value=500000)
+  #     predicted_red_accountant = 0.4 * values()$count_of_accountant
+  #
+  #     updateNumericInput(session,"manpower_reduction_accountant",value = predicted_red_accountant)
+  #
+  #   }
   # })
-
-  # fix accountant stuff
 
   # observe({
   #   predicted_red_dispatcher =  1
@@ -605,8 +633,6 @@ server <- function(input, output, session) {
   output$manpower_pte_total <- renderText({
     values()$count_of_accountant
   })
-
-
 
   # output$pieChart <- renderPlot({
   #   ggplot(cost.df(), aes(x = "", y = Cost, fill = Titles)) +
